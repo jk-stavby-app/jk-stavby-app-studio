@@ -60,8 +60,6 @@ const Admin: React.FC = () => {
         if (error) throw error;
         showToast('Uživatel byl aktualizován', 'success');
       } else {
-        // Note: Real user creation usually requires Supabase Auth invitation
-        // This inserts into the public profile table assuming a trigger or existing user
         const { error } = await supabase
           .from('user_profiles')
           .insert([{
@@ -125,7 +123,6 @@ const Admin: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
-      {/* Header with title and add button */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-[#0F172A]">Správa uživatelů</h2>
@@ -140,9 +137,8 @@ const Admin: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bento-card p-6 border border-slate-50 flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
           <div className="p-4 bg-[rgba(91,154,173,0.1)] rounded-2xl text-[#5B9AAD]">
             <Users size={28} />
           </div>
@@ -152,7 +148,7 @@ const Admin: React.FC = () => {
           </div>
         </div>
         
-        <div className="bento-card p-6 border border-slate-50 flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
           <div className="p-4 bg-[rgba(16,185,129,0.1)] rounded-2xl text-[#10B981]">
             <UserCheck size={28} />
           </div>
@@ -164,7 +160,7 @@ const Admin: React.FC = () => {
           </div>
         </div>
         
-        <div className="bento-card p-6 border border-slate-50 flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
           <div className="p-4 bg-[rgba(245,158,11,0.1)] rounded-2xl text-[#F59E0B]">
             <Shield size={28} />
           </div>
@@ -177,7 +173,6 @@ const Admin: React.FC = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
       <div className="relative w-full">
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#64748B]" size={20} />
         <input
@@ -185,12 +180,11 @@ const Admin: React.FC = () => {
           placeholder="Hledat uživatele dle jména nebo e-mailu..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 bg-white border-none shadow-sm rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
+          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E8F0] shadow-sm rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
         />
       </div>
 
-      {/* Users table */}
-      <div className="bento-card bg-white p-6 md:p-8 border border-slate-50 overflow-hidden">
+      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6 md:p-8 shadow-sm">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
@@ -208,7 +202,7 @@ const Admin: React.FC = () => {
                   <th className="px-6 py-4 text-xs font-bold text-[#64748B] uppercase tracking-wider text-right">AKCE</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map(user => (
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-5">
@@ -218,7 +212,7 @@ const Admin: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-base font-bold text-[#0F172A]">{user.full_name || 'Bez jména'}</p>
-                          <p className="text-sm text-[#64748B] font-medium">{user.email}</p>
+                          <p className="text-sm text-[#475569] font-medium">{user.email}</p>
                         </div>
                       </div>
                     </td>
@@ -240,7 +234,7 @@ const Admin: React.FC = () => {
                         {user.is_active ? 'Aktivní' : 'Neaktivní'}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-base text-[#64748B] font-medium">
+                    <td className="px-6 py-5 text-base text-[#475569] font-medium">
                       {user.last_login 
                         ? formatDate(user.last_login) 
                         : 'Nikdy'}
@@ -249,17 +243,17 @@ const Admin: React.FC = () => {
                       <div className="flex items-center justify-end gap-3">
                         <button 
                           onClick={() => openEditModal(user)}
-                          className="p-3 bg-slate-100 hover:bg-slate-200 text-[#64748B] rounded-xl transition-all"
+                          className="p-3 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-[#64748B] rounded-xl transition-all"
                           title="Upravit"
                         >
                           <Pencil size={20} />
                         </button>
                         <button 
                           onClick={() => toggleUserActive(user)}
-                          className={`p-3 rounded-xl transition-all ${
+                          className={`p-3 rounded-xl border transition-all ${
                             user.is_active 
-                              ? 'bg-rose-50 text-rose-600 hover:bg-rose-100' 
-                              : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                              ? 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100' 
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
                           }`}
                           title={user.is_active ? 'Deaktivovat' : 'Aktivovat'}
                         >
@@ -275,8 +269,8 @@ const Admin: React.FC = () => {
                 {filteredUsers.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-24 text-center">
-                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Users size={32} className="text-slate-200" />
+                      <div className="w-20 h-20 bg-[#FAFBFC] border border-[#E2E8F0] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Users size={32} className="text-[#E2E8F0]" />
                       </div>
                       <p className="text-[#64748B] text-lg font-medium">Nebyly nalezeny žádné záznamy</p>
                     </td>
@@ -288,11 +282,10 @@ const Admin: React.FC = () => {
         )}
       </div>
 
-      {/* Modal component */}
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 flex items-center justify-between border-b border-slate-100">
+          <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-[32px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 flex items-center justify-between border-b border-[#E2E8F0]">
               <h3 className="text-2xl font-bold text-[#0F172A]">
                 {editingUser ? 'Upravit uživatele' : 'Přidat uživatele'}
               </h3>
@@ -311,7 +304,7 @@ const Admin: React.FC = () => {
                   type="text"
                   value={formData.full_name}
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base font-medium"
+                  className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base font-medium"
                   required
                 />
               </div>
@@ -323,8 +316,8 @@ const Admin: React.FC = () => {
                   value={formData.email}
                   disabled={!!editingUser}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className={`w-full px-5 py-3.5 border-none rounded-2xl outline-none text-base font-medium ${
-                    editingUser ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 focus:ring-2 focus:ring-[#5B9AAD]/30'
+                  className={`w-full px-5 py-3.5 border rounded-2xl outline-none text-base font-medium ${
+                    editingUser ? 'bg-slate-100 border-[#E2E8F0] text-slate-400 cursor-not-allowed' : 'bg-white border-[#E2E8F0] focus:ring-2 focus:ring-[#5B9AAD]/30'
                   }`}
                   required
                 />
@@ -335,14 +328,14 @@ const Admin: React.FC = () => {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
-                  className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base font-bold appearance-none"
+                  className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base font-bold appearance-none"
                 >
                   <option value="user">Uživatel (Prohlížení)</option>
                   <option value="admin">Administrátor (Plný přístup)</option>
                 </select>
               </div>
               
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#E2E8F0]">
                 <input
                   type="checkbox"
                   id="is_active"
@@ -359,7 +352,7 @@ const Admin: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-8 py-4 bg-slate-100 text-[#64748B] font-bold rounded-2xl hover:bg-slate-200 transition-all text-base"
+                  className="flex-1 px-8 py-4 bg-white border border-[#E2E8F0] text-[#64748B] font-bold rounded-2xl hover:bg-slate-50 transition-all text-base"
                 >
                   Zrušit
                 </button>

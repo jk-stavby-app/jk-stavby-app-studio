@@ -16,7 +16,11 @@ const StatCard: React.FC<{
   icon: any; 
   highlight?: boolean 
 }> = ({ label, value, trend, icon: Icon, highlight }) => (
-  <div className={`bento-card p-6 ${highlight ? 'bg-gradient-to-br from-[#5B9AAD] to-[#7CB0C2] text-white' : 'bg-white text-[#0F172A]'}`}>
+  <div className={`rounded-2xl p-6 border transition-all duration-300 ${
+    highlight 
+      ? 'bg-gradient-to-br from-[#5B9AAD] to-[#7CB0C2] text-white border-[#5B9AAD] shadow-lg shadow-[#5B9AAD]/20' 
+      : 'bg-[#FAFBFC] border-[#E2E8F0] text-[#0F172A]'
+  }`}>
     <div className="flex justify-between items-start mb-4">
       <div className={`p-2.5 rounded-2xl ${highlight ? 'bg-white/20' : 'bg-[#5B9AAD]/10 text-[#5B9AAD]'}`}>
         <Icon size={24} />
@@ -139,7 +143,7 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cost Distribution Chart */}
-        <div className="bento-card p-6 lg:col-span-1">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] lg:col-span-1">
           <h3 className="text-xl font-bold mb-6 text-[#0F172A]">Rozdělení nákladů</h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -178,7 +182,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Top Projects Custom Bar List (Interactive Rows) */}
-        <div className="bento-card p-8 lg:col-span-2">
+        <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] lg:col-span-2">
           <h3 className="text-xl font-bold mb-8 text-[#0F172A]">Největší projekty dle nákladů</h3>
           <div className="space-y-4">
             {chartData.map((item) => (
@@ -191,7 +195,7 @@ const Dashboard: React.FC = () => {
                   <span className="text-[16px] font-semibold text-slate-800 group-hover:text-[#5B9AAD] transition-colors truncate max-w-[70%]">
                     {item.name}
                   </span>
-                  <span className="text-[14px] font-bold text-slate-500 whitespace-nowrap">
+                  <span className="text-[14px] font-bold text-[#475569] whitespace-nowrap">
                     {formatCurrency(item.value)}
                   </span>
                 </div>
@@ -213,7 +217,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Invoices Table */}
-      <div className="bento-card p-6 overflow-hidden">
+      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-[#0F172A]">Nedávné faktury</h3>
           <button onClick={() => navigate('/invoices')} className="text-[#5B9AAD] font-semibold text-base hover:underline">Zobrazit vše</button>
@@ -222,19 +226,19 @@ const Dashboard: React.FC = () => {
           <table className="w-full text-left min-w-[700px]">
             <thead>
               <tr className="text-xs font-semibold text-[#64748B] uppercase tracking-wider border-b border-slate-100 pb-4">
-                <th className="px-4 py-3 sticky left-0 bg-white">Číslo</th>
+                <th className="px-4 py-3 sticky left-0 bg-[#FAFBFC]">Číslo</th>
                 <th className="px-4 py-3">Projekt</th>
                 <th className="px-4 py-3">Dodavatel</th>
                 <th className="px-4 py-3">Částka</th>
                 <th className="px-4 py-3 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {invoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-4 py-5 text-base font-medium text-[#0F172A] sticky left-0 bg-white group-hover:bg-slate-50/50">{inv.invoice_number}</td>
-                  <td className="px-4 py-5 text-base text-[#64748B]">{inv.project_name}</td>
-                  <td className="px-4 py-5 text-base text-[#64748B]">{inv.supplier_name}</td>
+                  <td className="px-4 py-5 text-base font-medium text-[#0F172A] sticky left-0 bg-[#FAFBFC] group-hover:bg-slate-50/50">{inv.invoice_number}</td>
+                  <td className="px-4 py-5 text-base text-[#475569]">{inv.project_name}</td>
+                  <td className="px-4 py-5 text-base text-[#475569]">{inv.supplier_name}</td>
                   <td className="px-4 py-5 text-base font-semibold text-[#0F172A]">{formatCurrency(inv.total_amount)}</td>
                   <td className="px-4 py-5 text-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase ${

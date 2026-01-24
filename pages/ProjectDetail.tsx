@@ -51,16 +51,16 @@ const EditModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-8 py-6 flex items-center justify-between border-b border-slate-100">
+      <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="px-8 py-6 flex items-center justify-between border-b border-[#E2E8F0]">
           <h3 className="text-2xl font-bold">Nastavení rozpočtu</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors"><X size={24} /></button>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-[#64748B]"><X size={24} /></button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="space-y-2">
             <label className="text-base font-bold text-[#64748B]">Název projektu (nelze měnit)</label>
-            <input disabled value={project.name} className="w-full px-5 py-3.5 bg-slate-50 text-slate-400 rounded-2xl cursor-not-allowed border-none outline-none text-base" />
+            <input disabled value={project.name} className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] text-slate-400 rounded-2xl cursor-not-allowed outline-none text-base" />
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -70,7 +70,7 @@ const EditModal: React.FC<{
                 type="number" 
                 value={formData.planned_budget}
                 onChange={e => setFormData({...formData, planned_budget: Number(e.target.value)})}
-                className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base"
+                className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base"
               />
             </div>
             <div className="space-y-2">
@@ -78,7 +78,7 @@ const EditModal: React.FC<{
               <select 
                 value={formData.status}
                 onChange={e => setFormData({...formData, status: e.target.value as any})}
-                className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 appearance-none text-base"
+                className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 appearance-none text-base font-bold"
               >
                 <option value="active">Aktivní</option>
                 <option value="completed">Dokončeno</option>
@@ -93,7 +93,7 @@ const EditModal: React.FC<{
               rows={4} 
               value={formData.notes}
               onChange={e => setFormData({...formData, notes: e.target.value})}
-              className="w-full px-5 py-3.5 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 resize-none text-base"
+              className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 resize-none text-base"
               placeholder="Zadejte doplňující informace k projektu..."
             />
           </div>
@@ -102,14 +102,14 @@ const EditModal: React.FC<{
             <button 
               type="button" 
               onClick={onClose} 
-              className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-[#64748B] font-bold rounded-2xl transition-all text-base"
+              className="flex-1 py-4 bg-white border border-[#E2E8F0] text-[#64748B] font-bold rounded-2xl hover:bg-slate-50 transition-all text-base"
             >
               Zrušit
             </button>
             <button 
               type="submit" 
               disabled={loading}
-              className="flex-1 py-4 bg-[#5B9AAD] hover:bg-[#4A8A9D] text-white font-bold rounded-2xl shadow-lg shadow-[#5B9AAD]/20 flex items-center justify-center gap-2 transition-all text-base"
+              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl shadow-lg shadow-[#5B9AAD]/20 flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
             >
               {loading ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
               {loading ? 'Ukládám...' : 'Uložit změny'}
@@ -278,7 +278,7 @@ const ProjectDetail: React.FC = () => {
         </div>
         <button 
           onClick={() => setShowEdit(true)}
-          className="w-full md:w-auto px-8 py-4 bg-white border border-slate-200 text-[#0F172A] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm text-base"
+          className="w-full md:w-auto px-8 py-4 bg-[#FAFBFC] border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm text-base"
         >
           <Calculator size={20} />
           Zadat rozpočet
@@ -287,26 +287,26 @@ const ProjectDetail: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bento-card p-6 border border-slate-50">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Plánovaný rozpočet</p>
           <h3 className="text-2xl font-bold text-[#0F172A] mb-5">{formatCurrency(stats.budget)}</h3>
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl w-fit"><Wallet size={22} /></div>
         </div>
-        <div className="bento-card p-6 border border-slate-50">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Skutečné náklady</p>
           <h3 className={`text-2xl font-bold mb-5 ${stats.percentage > 100 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
             {formatCurrency(stats.costs)}
           </h3>
           <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl w-fit"><TrendingUp size={22} /></div>
         </div>
-        <div className="bento-card p-6 border border-slate-50">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Zbývá z rozpočtu</p>
           <h3 className={`text-2xl font-bold mb-5 ${stats.remaining < 0 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
             {formatCurrency(stats.remaining)}
           </h3>
           <div className="p-2.5 bg-slate-50 text-slate-600 rounded-xl w-fit"><Calendar size={22} /></div>
         </div>
-        <div className="bento-card p-6 border border-slate-50">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Celkem faktur</p>
           <h3 className="text-2xl font-bold text-[#0F172A] mb-1">{stats.count}</h3>
           
@@ -316,7 +316,7 @@ const ProjectDetail: React.FC = () => {
             <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.pending / invoiceStats.total) * 100 : 0}%` }} className="bg-[#F59E0B] h-full" title="Čekající" />
             <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.overdue / invoiceStats.total) * 100 : 0}%` }} className="bg-[#EF4444] h-full" title="Po splatnosti" />
           </div>
-          <p className="text-[10px] text-[#64748B] font-semibold whitespace-nowrap">
+          <p className="text-[10px] text-[#475569] font-semibold whitespace-nowrap">
             {invoiceStats.paid} zaplaceno · {invoiceStats.pending} čekající · {invoiceStats.overdue} po splatnosti
           </p>
         </div>
@@ -327,7 +327,7 @@ const ProjectDetail: React.FC = () => {
         {/* Left Column (1/3) */}
         <div className="lg:col-span-1 flex flex-col gap-8">
           {/* Progress Card */}
-          <div className="bento-card p-8 bg-white border border-slate-50">
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm">
             <h3 className="text-xl font-bold mb-6">Čerpání rozpočtu</h3>
             <div className="flex justify-between items-end mb-4">
               <span className="text-4xl font-bold text-[#0F172A]">{stats.percentage.toFixed(1)}%</span>
@@ -351,8 +351,8 @@ const ProjectDetail: React.FC = () => {
             )}
           </div>
 
-          {/* Notes Card - Enhanced with Inline Editing */}
-          <div className="bento-card p-8 bg-white border border-slate-50 flex-1">
+          {/* Notes Card */}
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm flex-1">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Poznámky k projektu</h3>
               {!isEditingNotes && notes && (
@@ -370,7 +370,7 @@ const ProjectDetail: React.FC = () => {
                 <textarea 
                   value={editedNotes}
                   onChange={(e) => setEditedNotes(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-[#5B9AAD]/30 text-base min-h-[120px] resize-none"
+                  className="w-full px-4 py-3 bg-white border-2 border-[#E2E8F0] rounded-2xl outline-none focus:border-[#5B9AAD]/30 text-base min-h-[120px] resize-none"
                   placeholder="Zadejte poznámky k projektu..."
                   autoFocus
                 />
@@ -395,11 +395,11 @@ const ProjectDetail: React.FC = () => {
             ) : (
               <div className="group h-full flex flex-col">
                 {notes ? (
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex-1">
+                  <div className="p-6 bg-white rounded-2xl border border-[#E2E8F0] flex-1">
                     <p className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap">{notes}</p>
                   </div>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="flex-1 flex flex-col items-center justify-center py-8 bg-white rounded-2xl border border-dashed border-[#E2E8F0]">
                     <p className="text-slate-400 font-medium mb-4 italic">Žádné poznámky</p>
                     <button 
                       onClick={() => setIsEditingNotes(true)}
@@ -414,12 +414,11 @@ const ProjectDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (2/3) - Chart with Reference Line */}
+        {/* Right Column (2/3) - Chart card */}
         <div className="lg:col-span-2 flex">
-          <div className="bento-card p-8 bg-white border border-slate-50 w-full flex flex-col h-full">
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm w-full flex flex-col h-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <h3 className="text-xl font-bold">Vývoj nákladů v čase</h3>
-              {/* Custom Chart Legend */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm bg-[#5B9AAD]" />
@@ -460,7 +459,6 @@ const ProjectDetail: React.FC = () => {
                     formatter={(val: any) => formatCurrency(val)}
                   />
                   
-                  {/* Budget Reference Line */}
                   <ReferenceLine 
                     y={stats.budget} 
                     stroke="#94A3B8" 
@@ -483,8 +481,8 @@ const ProjectDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Invoices Table Section */}
-      <div className="bento-card p-8 bg-white border border-slate-50 overflow-hidden">
+      {/* Invoices Table container */}
+      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <h3 className="text-xl font-bold">Přehled faktur projektu</h3>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
@@ -494,13 +492,13 @@ const ProjectDetail: React.FC = () => {
                 placeholder="Hledat fakturu nebo dodavatele..." 
                 value={searchInvoice}
                 onChange={e => setSearchInvoice(e.target.value)}
-                className="pl-12 pr-5 py-3.5 bg-slate-50 rounded-2xl outline-none text-base w-full focus:ring-2 focus:ring-[#5B9AAD]/20"
+                className="pl-12 pr-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none text-base w-full focus:ring-2 focus:ring-[#5B9AAD]/20"
               />
             </div>
             <select 
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="px-6 py-3.5 bg-slate-50 rounded-2xl outline-none text-base font-bold appearance-none text-[#64748B] min-w-[180px]"
+              className="px-6 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none text-base font-bold appearance-none text-[#64748B] min-w-[180px]"
             >
               <option value="all">Všechny stavy</option>
               <option value="paid">Uhrazeno</option>
@@ -529,12 +527,12 @@ const ProjectDetail: React.FC = () => {
                 <th className="px-4 py-4 text-center">Stav platby</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {filteredInvoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-4 py-6 text-base font-semibold text-[#0F172A]">{inv.invoice_number}</td>
-                  <td className="px-4 py-6 text-base text-[#64748B] font-medium">{inv.supplier_name}</td>
-                  <td className="px-4 py-6 text-base text-[#64748B]">{formatDate(inv.date_issue)}</td>
+                  <td className="px-4 py-6 text-base text-[#475569] font-medium">{inv.supplier_name}</td>
+                  <td className="px-4 py-6 text-base text-[#475569]">{formatDate(inv.date_issue)}</td>
                   <td className="px-4 py-6 text-base font-bold text-right text-[#0F172A]">{formatCurrency(inv.total_amount)}</td>
                   <td className="px-4 py-6 text-center">
                     <span className={`px-4 py-1 text-xs font-bold rounded-full uppercase border ${
