@@ -6,7 +6,7 @@ import { Invoice } from '../types';
 import { formatCurrency, formatDate } from '../constants';
 
 const InvoiceStat: React.FC<{ label: string; value: string; count: number; color: string; icon: any }> = ({ label, value, count, color, icon: Icon }) => (
-  <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+  <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
     <div className="flex justify-between items-start mb-4">
       <div className={`p-2.5 rounded-2xl ${color}`}>
         <Icon size={22} />
@@ -33,7 +33,6 @@ const Invoices: React.FC = () => {
         .order('date_issue', { ascending: false });
 
       if (!all) {
-        // Only project-related invoices
         query = query.not('project_id', 'is', null);
       }
 
@@ -52,7 +51,6 @@ const Invoices: React.FC = () => {
     fetchInvoices(showAllInvoices);
   }, [showAllInvoices]);
 
-  // Stats react to current fetched data
   const stats = useMemo(() => {
     const total = invoices.length;
     const paid = invoices.filter(i => i.payment_status === 'paid').length;
@@ -67,7 +65,6 @@ const Invoices: React.FC = () => {
     return { total, paid, pending, overdue, totalAmount, paidAmount, pendingAmount, overdueAmount };
   }, [invoices]);
 
-  // Search filtering in memory
   const filteredInvoices = useMemo(() => {
     return invoices.filter(i => 
       i.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,18 +94,16 @@ const Invoices: React.FC = () => {
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-12">
-      {/* Row 1: Title and Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <h1 className="text-3xl font-bold text-[#0F172A]">Přehled faktur</h1>
         
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Segmented Toggle (Pill) */}
-          <div className="bg-[#FAFBFC] p-1 rounded-full flex shadow-sm border border-[#E2E8F0] w-full sm:w-auto overflow-hidden">
+          <div className="bg-[#FAFBFC] p-1 rounded-full flex border border-[#E2E8F0] w-full sm:w-auto overflow-hidden">
             <button
               onClick={() => setShowAllInvoices(false)}
               className={`flex-1 sm:min-w-[170px] px-4 md:px-6 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                 !showAllInvoices 
-                  ? 'bg-[#5B9AAD] text-white shadow-md' 
+                  ? 'bg-[#5B9AAD] text-white' 
                   : 'text-[#64748B] bg-transparent hover:text-[#0F172A]'
               }`}
             >
@@ -118,7 +113,7 @@ const Invoices: React.FC = () => {
               onClick={() => setShowAllInvoices(true)}
               className={`flex-1 sm:min-w-[170px] px-4 md:px-6 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${
                 showAllInvoices 
-                  ? 'bg-[#5B9AAD] text-white shadow-md' 
+                  ? 'bg-[#5B9AAD] text-white' 
                   : 'text-[#64748B] bg-transparent hover:text-[#0F172A]'
               }`}
             >
@@ -128,7 +123,7 @@ const Invoices: React.FC = () => {
 
           <button 
             onClick={exportToCSV}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FAFBFC] border border-[#E2E8F0] rounded-2xl text-sm md:text-base font-bold text-[#64748B] hover:bg-slate-50 transition-all shadow-sm w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FAFBFC] border border-[#E2E8F0] rounded-2xl text-sm md:text-base font-bold text-[#64748B] hover:bg-slate-50 transition-all w-full sm:w-auto"
           >
             <Download size={18} />
             <span>Export do CSV</span>
@@ -136,7 +131,6 @@ const Invoices: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Search Input Full Width */}
       <div className="relative w-full">
         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#64748B]" size={20} />
         <input
@@ -144,11 +138,10 @@ const Invoices: React.FC = () => {
           placeholder="Hledat fakturu, projekt nebo dodavatele..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E8F0] shadow-sm rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
+          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
         />
       </div>
 
-      {/* Stats Cards - Reactive to current filter */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <InvoiceStat 
           label="Celková fakturace" 
@@ -180,7 +173,6 @@ const Invoices: React.FC = () => {
         />
       </div>
 
-      {/* Table Container */}
       <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6 md:p-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">

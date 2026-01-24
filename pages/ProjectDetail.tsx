@@ -51,7 +51,7 @@ const EditModal: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-8 py-6 flex items-center justify-between border-b border-[#E2E8F0]">
           <h3 className="text-2xl font-bold">Nastavení rozpočtu</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-[#64748B]"><X size={24} /></button>
@@ -109,7 +109,7 @@ const EditModal: React.FC<{
             <button 
               type="submit" 
               disabled={loading}
-              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl shadow-lg shadow-[#5B9AAD]/20 flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
+              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
             >
               {loading ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
               {loading ? 'Ukládám...' : 'Uložit změny'}
@@ -133,7 +133,6 @@ const ProjectDetail: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortConfig, setSortConfig] = useState<{key: keyof Invoice, direction: 'asc' | 'desc'} | null>(null);
   
-  // Inline editing for notes
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState('');
 
@@ -256,7 +255,6 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-16 animate-in fade-in duration-500">
-      {/* Breadcrumbs */}
       <nav className="flex items-center gap-3 text-base font-semibold text-[#64748B]">
         <Link to="/" className="hover:text-[#5B9AAD] flex items-center gap-1.5"><Home size={18} /> Přehled</Link>
         <ChevronRight size={14} />
@@ -265,7 +263,6 @@ const ProjectDetail: React.FC = () => {
         <span className="text-[#0F172A]">{project.name}</span>
       </nav>
 
-      {/* Header Row */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <div className="flex items-center gap-4 mb-3">
@@ -278,39 +275,37 @@ const ProjectDetail: React.FC = () => {
         </div>
         <button 
           onClick={() => setShowEdit(true)}
-          className="w-full md:w-auto px-8 py-4 bg-[#FAFBFC] border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm text-base"
+          className="w-full md:w-auto px-8 py-4 bg-[#FAFBFC] border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all text-base"
         >
           <Calculator size={20} />
           Zadat rozpočet
         </button>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Plánovaný rozpočet</p>
           <h3 className="text-2xl font-bold text-[#0F172A] mb-5">{formatCurrency(stats.budget)}</h3>
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl w-fit"><Wallet size={22} /></div>
         </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Skutečné náklady</p>
           <h3 className={`text-2xl font-bold mb-5 ${stats.percentage > 100 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
             {formatCurrency(stats.costs)}
           </h3>
           <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl w-fit"><TrendingUp size={22} /></div>
         </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Zbývá z rozpočtu</p>
           <h3 className={`text-2xl font-bold mb-5 ${stats.remaining < 0 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
             {formatCurrency(stats.remaining)}
           </h3>
           <div className="p-2.5 bg-slate-50 text-slate-600 rounded-xl w-fit"><Calendar size={22} /></div>
         </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
           <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Celkem faktur</p>
           <h3 className="text-2xl font-bold text-[#0F172A] mb-1">{stats.count}</h3>
           
-          {/* Stacked bar for invoice statuses */}
           <div className="w-full h-2 bg-slate-100 rounded-full flex overflow-hidden my-3">
             <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.paid / invoiceStats.total) * 100 : 0}%` }} className="bg-[#10B981] h-full" title="Zaplaceno" />
             <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.pending / invoiceStats.total) * 100 : 0}%` }} className="bg-[#F59E0B] h-full" title="Čekající" />
@@ -322,12 +317,9 @@ const ProjectDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Progress, Notes & Chart Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
-        {/* Left Column (1/3) */}
         <div className="lg:col-span-1 flex flex-col gap-8">
-          {/* Progress Card */}
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm">
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0]">
             <h3 className="text-xl font-bold mb-6">Čerpání rozpočtu</h3>
             <div className="flex justify-between items-end mb-4">
               <span className="text-4xl font-bold text-[#0F172A]">{stats.percentage.toFixed(1)}%</span>
@@ -351,8 +343,7 @@ const ProjectDetail: React.FC = () => {
             )}
           </div>
 
-          {/* Notes Card */}
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm flex-1">
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] flex-1">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Poznámky k projektu</h3>
               {!isEditingNotes && notes && (
@@ -377,7 +368,7 @@ const ProjectDetail: React.FC = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={handleSaveNotes}
-                    className="flex-1 bg-[#5B9AAD] text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-colors shadow-sm"
+                    className="flex-1 bg-[#5B9AAD] text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-colors"
                   >
                     <Save size={16} /> Uložit
                   </button>
@@ -414,9 +405,8 @@ const ProjectDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (2/3) - Chart card */}
         <div className="lg:col-span-2 flex">
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] shadow-sm w-full flex flex-col h-full">
+          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] w-full flex flex-col h-full">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <h3 className="text-xl font-bold">Vývoj nákladů v čase</h3>
               <div className="flex items-center gap-4">
@@ -436,8 +426,8 @@ const ProjectDetail: React.FC = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
+                      <stop offset="5%" stopColor={COLORS.primary[500]} stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor={COLORS.primary[500]} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -455,7 +445,7 @@ const ProjectDetail: React.FC = () => {
                     tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '14px' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: 'none', fontSize: '14px' }}
                     formatter={(val: any) => formatCurrency(val)}
                   />
                   
@@ -473,7 +463,7 @@ const ProjectDetail: React.FC = () => {
                     }} 
                   />
 
-                  <Area type="monotone" dataKey="total" stroke={COLORS.primary} strokeWidth={4} fillOpacity={1} fill="url(#colorTotal)" />
+                  <Area type="monotone" dataKey="total" stroke={COLORS.primary[500]} strokeWidth={4} fillOpacity={1} fill="url(#colorTotal)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -481,8 +471,7 @@ const ProjectDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Invoices Table container */}
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-8 shadow-sm">
+      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-8">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
           <h3 className="text-xl font-bold">Přehled faktur projektu</h3>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">

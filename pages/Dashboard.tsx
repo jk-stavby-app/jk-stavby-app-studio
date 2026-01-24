@@ -18,7 +18,7 @@ const StatCard: React.FC<{
 }> = ({ label, value, trend, icon: Icon, highlight }) => (
   <div className={`rounded-2xl p-6 border transition-all duration-300 ${
     highlight 
-      ? 'bg-gradient-to-br from-[#5B9AAD] to-[#7CB0C2] text-white border-[#5B9AAD] shadow-lg shadow-[#5B9AAD]/20' 
+      ? 'bg-gradient-to-br from-[#5B9AAD] to-[#7CB0C2] text-white border-[#5B9AAD]' 
       : 'bg-[#FAFBFC] border-[#E2E8F0] text-[#0F172A]'
   }`}>
     <div className="flex justify-between items-start mb-4">
@@ -113,7 +113,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500">
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard 
           label="Rozpočet projektů" 
@@ -142,7 +141,6 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cost Distribution Chart */}
         <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] lg:col-span-1">
           <h3 className="text-xl font-bold mb-6 text-[#0F172A]">Rozdělení nákladů</h3>
           <div className="h-[300px]">
@@ -162,7 +160,7 @@ const Dashboard: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '14px' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: 'none', fontSize: '14px' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
               </PieChart>
@@ -181,7 +179,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Top Projects Custom Bar List (Interactive Rows) */}
         <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] lg:col-span-2">
           <h3 className="text-xl font-bold mb-8 text-[#0F172A]">Největší projekty dle nákladů</h3>
           <div className="space-y-4">
@@ -201,7 +198,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="relative w-full h-3.5 bg-slate-100 rounded-full overflow-hidden">
                   <div 
-                    className="absolute inset-y-0 left-0 bg-[#5B9AAD] rounded-full transition-all duration-1000 ease-out group-hover:bg-[#4A8A9D] group-hover:shadow-[0_0_8px_rgba(91,154,173,0.4)]"
+                    className="absolute inset-y-0 left-0 bg-[#5B9AAD] rounded-full transition-all duration-1000 ease-out group-hover:bg-[#4A8A9D]"
                     style={{ width: `${(item.value / maxVal) * 100}%` }}
                   />
                 </div>
@@ -216,7 +213,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Recent Invoices Table */}
       <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-[#0F172A]">Nedávné faktury</h3>

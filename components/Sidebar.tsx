@@ -18,7 +18,7 @@ const SidebarItem: React.FC<{
     className={({ isActive }) => `
       flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
       ${isActive 
-        ? 'bg-[#5B9AAD] text-white shadow-md shadow-[#5B9AAD]/20' 
+        ? 'bg-[#5B9AAD] text-white' 
         : 'text-[#64748B] hover:bg-[#5B9AAD]/10 hover:text-[#5B9AAD]'
       }
     `}
@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     >
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#5B9AAD] rounded-xl flex items-center justify-center text-white font-bold text-xl shrink-0 shadow-lg shadow-[#5B9AAD]/20">
+        <div className="w-10 h-10 bg-[#5B9AAD] rounded-xl flex items-center justify-center text-white font-bold text-xl shrink-0 border border-[#5B9AAD]/20">
           JK
         </div>
         {!isCollapsed && (
@@ -68,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         <div className="h-px bg-slate-100 w-full" />
       </div>
 
-      {/* User & Bottom Nav - Removed User Info Card */}
+      {/* User & Bottom Nav */}
       <div className="px-3 pb-6 space-y-1">
         <SidebarItem to="/settings" icon={Settings} label="Nastavení" isCollapsed={isCollapsed} />
         

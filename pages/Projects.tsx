@@ -32,20 +32,16 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
   };
 
   const getCardStyle = (p: Project) => {
-    const baseStyle = 'rounded-2xl p-6 border transition-all duration-300 cursor-pointer flex flex-col group animate-in zoom-in hover:shadow-md';
+    const baseStyle = 'rounded-2xl p-6 border border-[#E5E7EB] transition-all duration-200 cursor-pointer flex flex-col group hover:border-[#D1D5DB]';
     
     if (p.budget_usage_percent > 100) {
-      // Critical - over budget
-      return `${baseStyle} bg-[#FEF2F2] border-[#FECACA] border-l-4 border-l-[#EF4444]`;
+      return `${baseStyle} bg-[#FEF2F2]`;
     } else if (p.budget_usage_percent >= 80) {
-      // Warning
-      return `${baseStyle} bg-[#FFFBEB] border-[#FDE68A] border-l-4 border-l-[#F59E0B]`;
+      return `${baseStyle} bg-[#FFFBEB]`;
     } else if (p.status === 'completed') {
-      // Completed
-      return `${baseStyle} bg-[#F0FDF4] border-[#BBF7D0] border-l-4 border-l-[#10B981]`;
+      return `${baseStyle} bg-[#F0FDF4]`;
     } else {
-      // Normal active
-      return `${baseStyle} bg-[#FAFBFC] border-[#E2E8F0] border-l-4 border-l-[#5B9AAD]`;
+      return `${baseStyle} bg-white`;
     }
   };
 
@@ -72,7 +68,6 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
       onClick={() => navigate(`/projects/${project.id}`)}
       className={getCardStyle(project)}
     >
-      {/* Header row - code, year, status */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <span className="px-2.5 py-1 bg-[#E2E8F0] rounded text-sm font-bold text-[#475569]">
@@ -89,12 +84,10 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
         </span>
       </div>
       
-      {/* Project name - more prominent */}
       <h3 className="text-lg font-bold text-[#0F172A] mb-4 leading-tight group-hover:text-[#5B9AAD] transition-colors line-clamp-2 min-h-[3.5rem]">
         {project.name}
       </h3>
       
-      {/* Budget progress section */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-[#64748B]">Čerpání rozpočtu</span>
@@ -106,7 +99,6 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
           </span>
         </div>
         
-        {/* Progress bar with background track */}
         <div className="h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
           {project.budget_usage_percent > 100 ? (
             <div 
@@ -121,7 +113,6 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
           )}
         </div>
         
-        {/* Over budget indicator */}
         {project.budget_usage_percent > 100 && (
           <p className="text-xs text-[#EF4444] mt-1.5 font-bold animate-pulse">
             Přečerpáno o {(project.budget_usage_percent - 100).toFixed(1)}%
@@ -129,7 +120,6 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
         )}
       </div>
       
-      {/* Financial data - grid layout for better alignment */}
       <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-black/5">
         <div>
           <p className="text-[10px] text-[#64748B] uppercase font-bold tracking-wider mb-1">Rozpočet</p>
@@ -147,7 +137,6 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
         </div>
       </div>
       
-      {/* Invoice count - footer */}
       <div className="pt-3 border-t border-black/5 mt-auto">
         <div className="flex items-center gap-2 text-sm text-[#475569] font-medium">
           <FileText size={16} />
@@ -185,7 +174,7 @@ const NewProjectModal: React.FC<{ onClose: () => void; onSave: () => void; showT
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+      <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
         <div className="px-2 py-4 flex items-center justify-between border-b border-[#E2E8F0] mb-6">
           <h3 className="text-2xl font-bold text-[#0F172A]">Nový projekt</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-[#64748B]"><X size={24} /></button>
@@ -245,7 +234,7 @@ const NewProjectModal: React.FC<{ onClose: () => void; onSave: () => void; showT
             <button 
               type="submit"
               disabled={loading}
-              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl shadow-lg shadow-[#5B9AAD]/20 flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
+              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
             >
               {loading ? <Loader2 size={24} className="animate-spin" /> : <Plus size={24} />}
               {loading ? 'Vytvářím...' : 'Vytvořit projekt'}
@@ -294,22 +283,18 @@ const Projects: React.FC = () => {
   const processedProjects = useMemo(() => {
     let result = [...projects];
 
-    // 1. Hide empty: No invoices and zero budget
     if (hideEmpty) {
       result = result.filter(p => p.invoice_count > 0 || p.planned_budget > 0);
     }
 
-    // 2. Status filter
     if (statusFilter) {
       result = result.filter(p => p.status === statusFilter);
     }
 
-    // 3. Year filter
     if (selectedYear) {
       result = result.filter(p => p.project_year === selectedYear);
     }
 
-    // 4. Search filter
     if (searchTerm) {
       result = result.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -317,7 +302,6 @@ const Projects: React.FC = () => {
       );
     }
 
-    // 5. Activity sorting (Highest costs first, then alphabetically)
     result.sort((a, b) => {
       if (b.total_costs !== a.total_costs) {
         return b.total_costs - a.total_costs;
@@ -347,7 +331,6 @@ const Projects: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Search and Filters Containers */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
@@ -359,13 +342,12 @@ const Projects: React.FC = () => {
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-11 pr-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all shadow-sm h-[44px]"
+            className="w-full pl-11 pr-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl outline-none text-sm focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all h-[44px]"
           />
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          {/* Hide empty toggle container */}
-          <label className="flex items-center gap-2 px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl cursor-pointer min-w-[160px] h-[44px] hover:bg-slate-50 transition-colors shadow-sm">
+          <label className="flex items-center gap-2 px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl cursor-pointer min-w-[160px] h-[44px] hover:bg-slate-50 transition-colors">
             <input
               type="checkbox"
               checked={hideEmpty}
@@ -378,7 +360,6 @@ const Projects: React.FC = () => {
             <span className="text-sm font-bold text-[#0F172A] whitespace-nowrap">Skrýt prázdné</span>
           </label>
 
-          {/* Year select container */}
           <div className="relative">
             <select
               value={selectedYear || ''}
@@ -386,7 +367,7 @@ const Projects: React.FC = () => {
                 setSelectedYear(e.target.value ? Number(e.target.value) : null);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl min-w-[160px] h-[44px] text-sm text-[#0F172A] font-bold outline-none focus:ring-2 focus:ring-[#5B9AAD]/20 appearance-none cursor-pointer shadow-sm pr-10"
+              className="px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl min-w-[160px] h-[44px] text-sm text-[#0F172A] font-bold outline-none focus:ring-2 focus:ring-[#5B9AAD]/20 appearance-none cursor-pointer pr-10"
             >
               <option value="">Všechny roky</option>
               {years.map(year => (
@@ -396,7 +377,6 @@ const Projects: React.FC = () => {
             <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={14} />
           </div>
 
-          {/* Status select container */}
           <div className="relative">
             <select
               value={statusFilter}
@@ -404,7 +384,7 @@ const Projects: React.FC = () => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl min-w-[160px] h-[44px] text-sm text-[#0F172A] font-bold outline-none focus:ring-2 focus:ring-[#5B9AAD]/20 appearance-none cursor-pointer shadow-sm pr-10"
+              className="px-4 py-2.5 bg-[#FAFBFC] border border-[#E2E8F0] rounded-xl min-w-[160px] h-[44px] text-sm text-[#0F172A] font-bold outline-none focus:ring-2 focus:ring-[#5B9AAD]/20 appearance-none cursor-pointer pr-10"
             >
               <option value="">Všechny stavy</option>
               <option value="active">Aktivní</option>
@@ -416,7 +396,7 @@ const Projects: React.FC = () => {
 
           <button 
             onClick={() => setShowNewModal(true)}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#5B9AAD]/20 hover:bg-[#4A8A9D] transition-all whitespace-nowrap h-[44px] min-w-[160px]"
+            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-bold hover:bg-[#4A8A9D] transition-all whitespace-nowrap h-[44px] min-w-[160px]"
           >
             <Plus size={18} />
             Nový projekt
@@ -445,7 +425,7 @@ const Projects: React.FC = () => {
 
           {processedProjects.length === 0 && (
             <div className="py-24 text-center">
-              <div className="w-24 h-24 bg-[#FAFBFC] border border-[#E2E8F0] rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+              <div className="w-24 h-24 bg-[#FAFBFC] border border-[#E2E8F0] rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search size={40} className="text-[#E2E8F0]" />
               </div>
               <p className="text-[#64748B] text-lg font-medium">Žádné projekty neodpovídají zvoleným filtrům</p>

@@ -81,7 +81,7 @@ const Reports: React.FC = () => {
             <Calendar size={16} />
             Období
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#5B9AAD] text-white rounded-xl text-xs md:text-sm font-semibold shadow-lg shadow-[#5B9AAD]/20">
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#5B9AAD] text-white rounded-xl text-xs md:text-sm font-semibold">
             <FileText size={16} />
             Export
           </button>
@@ -97,8 +97,8 @@ const Reports: React.FC = () => {
               <AreaChart data={monthlyAggregated}>
                 <defs>
                   <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0}/>
+                    <stop offset="5%" stopColor={COLORS.primary[500]} stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor={COLORS.primary[500]} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -108,7 +108,7 @@ const Reports: React.FC = () => {
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '12px' }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
-                <Area type="monotone" dataKey="total" stroke={COLORS.primary} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                <Area type="monotone" dataKey="total" stroke={COLORS.primary[500]} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -137,7 +137,7 @@ const Reports: React.FC = () => {
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                 <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={8} />
-                <Bar dataKey="actual" name="Skutečnost" fill={COLORS.primary} radius={[0, 4, 4, 0]} barSize={8} />
+                <Bar dataKey="actual" name="Skutečnost" fill={COLORS.primary[500]} radius={[0, 4, 4, 0]} barSize={8} />
               </BarChart>
             </ResponsiveContainer>
           </div>

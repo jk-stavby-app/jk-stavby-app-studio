@@ -130,7 +130,7 @@ const Admin: React.FC = () => {
         </div>
         <button 
           onClick={openAddModal}
-          className="flex items-center gap-2 px-8 py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold hover:bg-[#4A8A9D] transition-all shadow-lg shadow-[#5B9AAD]/20 text-base w-full md:w-auto justify-center"
+          className="flex items-center gap-2 px-8 py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold hover:bg-[#4A8A9D] transition-all text-base w-full md:w-auto justify-center"
         >
           <Plus size={22} />
           Přidat uživatele
@@ -138,7 +138,7 @@ const Admin: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] flex items-center gap-5">
           <div className="p-4 bg-[rgba(91,154,173,0.1)] rounded-2xl text-[#5B9AAD]">
             <Users size={28} />
           </div>
@@ -148,7 +148,7 @@ const Admin: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] flex items-center gap-5">
           <div className="p-4 bg-[rgba(16,185,129,0.1)] rounded-2xl text-[#10B981]">
             <UserCheck size={28} />
           </div>
@@ -160,7 +160,7 @@ const Admin: React.FC = () => {
           </div>
         </div>
         
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] shadow-sm flex items-center gap-5">
+        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0] flex items-center gap-5">
           <div className="p-4 bg-[rgba(245,158,11,0.1)] rounded-2xl text-[#F59E0B]">
             <Shield size={28} />
           </div>
@@ -180,11 +180,11 @@ const Admin: React.FC = () => {
           placeholder="Hledat uživatele dle jména nebo e-mailu..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E8F0] shadow-sm rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
+          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl outline-none text-base focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
         />
       </div>
 
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6 md:p-8 shadow-sm">
+      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-6 md:p-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
@@ -207,7 +207,7 @@ const Admin: React.FC = () => {
                   <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#5B9AAD] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                        <div className="w-12 h-12 rounded-2xl bg-[#5B9AAD] flex items-center justify-center text-white font-bold text-lg">
                           {user.full_name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
@@ -284,7 +284,7 @@ const Admin: React.FC = () => {
 
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-[32px] w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-[32px] w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-8 py-6 flex items-center justify-between border-b border-[#E2E8F0]">
               <h3 className="text-2xl font-bold text-[#0F172A]">
                 {editingUser ? 'Upravit uživatele' : 'Přidat uživatele'}
@@ -358,7 +358,7 @@ const Admin: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-8 py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold hover:bg-[#4A8A9D] transition-all shadow-lg shadow-[#5B9AAD]/20 text-base"
+                  className="flex-1 px-8 py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold hover:bg-[#4A8A9D] transition-all text-base"
                 >
                   {editingUser ? 'Uložit změny' : 'Vytvořit účet'}
                 </button>
