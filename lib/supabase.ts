@@ -1,10 +1,12 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient(
-  'https://gwmqhwjctrqzmypmegwi.supabase.co',
-  'sb_publishable_mvhWokpL6cVXG3b2znN2TQ_pPuyZNYy'
-)
+// Using the credentials provided by the user.
+// There is no build step in this environment, so environment variables from process.env cannot be used.
+const supabaseUrl = 'https://gwmqhwjctrqzmypmegwi.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3bXFod2pjdHJxem15cG1lZ3dpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4OTU1MzAsImV4cCI6MjA4NDQ3MTUzMH0.SEyqR2zU8s6Kw0nMIfqApUqiBlicl0WpY2UbA5VqfpM';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // READ
 export const getProjects = () => supabase.from('project_dashboard').select('*')
