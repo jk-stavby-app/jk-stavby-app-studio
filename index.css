@@ -2,15 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #F4F6F8;
+@layer base {
+  body {
+    @apply bg-[#F4F6F8] text-[#0F172A] antialiased;
     font-family: 'Rubik', sans-serif;
-    color: #0F172A;
-    margin: 0;
-    font-size: 16px;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 /* STRICT: Remove all shadows and ring shadows globally for that flat premium look */
