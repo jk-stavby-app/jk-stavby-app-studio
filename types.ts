@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   name: string;
@@ -29,10 +28,45 @@ export interface Invoice {
 
 export interface UserProfile {
   id: string;
-  full_name: string | null;
   email: string;
+  full_name: string | null;
   role: 'admin' | 'user';
   is_active: boolean;
-  last_login: string | null;
+  avatar_url?: string | null;
+  phone?: string | null;
+  position?: string | null;
+  last_login?: string | null;
   created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateUserData {
+  email: string;
+  password?: string;
+  full_name: string;
+  role: 'admin' | 'user';
+  is_active: boolean;
+  phone?: string;
+  position?: string;
+}
+
+export interface UpdateUserData {
+  full_name?: string;
+  role?: 'admin' | 'user';
+  is_active?: boolean;
+  phone?: string | null;
+  position?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface BudgetChange {
+  id: string;
+  project_id: string;
+  changed_by: string;
+  old_value: number;
+  new_value: number;
+  change_amount: number;
+  reason: string | null;
+  created_at: string;
+  admin_name?: string;
 }

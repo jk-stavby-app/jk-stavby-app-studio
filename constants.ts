@@ -1,4 +1,3 @@
-
 export const COLORS = {
   // Primary palette (petrol blue)
   primary: {
@@ -18,30 +17,33 @@ export const COLORS = {
   chart: [
     '#5B9AAD', // primary
     '#7CB5C5', // light primary
-    '#9ECAD6', // lighter
     '#4A8A9D', // dark primary
     '#3A6A7D', // darker
     '#10B981', // accent green
+    '#9ECAD6', // lighter
   ],
   
   // Semantic
   success: '#10B981',
   successLight: '#ECFDF5',
-  warning: '#F59E0B',
-  warningLight: '#FFFBEB',
-  danger: '#EF4444',
+  warning: '#D97706',
+  warningLight: '#FEF9EE',
+  danger: '#DC2626',
   dangerLight: '#FEF2F2',
   
-  // Neutrals
-  white: '#FFFFFF',
-  background: '#F8FAFC',
-  border: '#E5E7EB',
-  borderHover: '#D1D5DB',
+  // Neutrals (NO pure white - all have subtle cool undertone)
+  background: '#F4F6F8',       // App background
+  card: '#FAFBFC',             // Card background
+  surface: '#F8F9FA',          // Inputs, modals
+  elevated: '#FDFDFE',         // Hover states
+  border: '#E2E5E9',           // Default border
+  borderHover: '#CDD1D6',      // Hover border
   
-  // Text
-  textPrimary: '#0F172A',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
+  // Text (NO pure black - WCAG 2.2 compliant)
+  textPrimary: '#0F172A',      // 14.5:1 on card
+  textSecondary: '#475569',    // 5.8:1 on card
+  textMuted: '#5C6878',        // 4.6:1 on card
+  textOnPrimary: '#F8FAFC',    // Text on primary buttons
 };
 
 // Currency formatting helper

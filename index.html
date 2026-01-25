@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -8,38 +7,74 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Base - NO pure white or black */
         body {
+            background-color: #F4F6F8;
             font-family: 'Rubik', sans-serif;
-            background-color: #F8FAFC;
             color: #0F172A;
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        /* STRICT: Remove all shadows and ring shadows globally for that flat premium look */
+        * {
+            box-shadow: none !important;
+            --tw-shadow: none !important;
+            --tw-ring-shadow: none !important;
+        }
+
+        /* Smooth transitions for interactive elements */
+        a, button, input, select, textarea {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Focus states for accessibility */
+        *:focus-visible {
+            outline: 2px solid #5B9AAD;
+            outline-offset: 2px;
+        }
+
+        /* Construction blueprint grid pattern */
         .blueprint-grid {
-            background-color: #F8FAFC;
+            background-color: #F4F6F8;
             background-image: 
-                linear-gradient(#E2E8F0 1px, transparent 1px),
-                linear-gradient(90deg, #E2E8F0 1px, transparent 1px);
+                linear-gradient(#E2E5E9 1px, transparent 1px),
+                linear-gradient(90deg, #E2E5E9 1px, transparent 1px);
             background-size: 40px 40px;
         }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+
+        /* Selection color - petrol blue accent */
+        ::selection {
+            background-color: #C3DFE7;
+            color: #0F172A;
         }
-        .bento-card {
-            background: #FFFFFF;
-            border-radius: 24px;
-            border: 1px solid #E2E8F0;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease;
+
+        /* Custom scrollbar for premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-        .bento-card:hover {
-            border-color: #94A3B8;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
-        .animate-fade-up {
-            animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        ::-webkit-scrollbar-thumb {
+            background: #E2E5E9;
+            border-radius: 10px;
         }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #CDD1D6;
+        }
+
+        /* Reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 <script type="importmap">

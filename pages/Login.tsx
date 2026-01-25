@@ -1,127 +1,164 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/Toast';
 
 interface LoginProps {
   onLogin: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = () => {
+  const { signIn } = useAuth();
+  const { showToast, ToastComponent } = useToast();
   const [email, setEmail] = useState('marek.janota@jkstavby.cz');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      onLogin();
-      setLoading(false);
+    setIsLoading(true);
+    
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      showToast(error.message || 'Nepodařilo se přihlásit', 'error');
+      setIsLoading(false);
+    } else {
       navigate('/');
-    }, 800);
+    }
   };
 
   return (
-    <div className="min-h-screen blueprint-grid flex flex-col items-center justify-center p-4">
-      <div className="max-w-[420px] w-full animate-fade-up">
-        <div className="bg-white rounded-[24px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] p-8 md:p-12">
-          {/* Logo Area */}
-          <div className="flex justify-center mb-10">
-            <img 
-              src="/logo.png" 
-              alt="JK Stavby Logo" 
-              className="w-[180px] h-auto object-contain"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
-                if (parent) {
-                  const placeholder = document.createElement('div');
-                  placeholder.className = "flex items-center gap-3";
-                  placeholder.innerHTML = `
-                    <div class="w-12 h-12 bg-[#5B9AAD] rounded-xl flex items-center justify-center text-white font-bold text-2xl">JK</div>
-                    <div class="text-left"><div class="font-bold text-xl leading-none">JK Stavby</div><div class="text-[10px] text-gray-400 uppercase tracking-tighter">Stavební společnost</div></div>
-                  `;
-                  parent.appendChild(placeholder);
-                }
-              }}
-            />
-          </div>
-
-          {/* Heading */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-[#0F172A] mb-2">Vítejte zpět</h1>
-            <p className="text-[#64748B] text-base">Přihlaste se do systému správy projektů</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-base font-medium text-[#0F172A] mb-2">E-mail</label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] transition-colors group-focus-within:text-[#5B9AAD]" size={20} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vas@email.cz"
-                  className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl focus:ring-2 focus:ring-[#5B9AAD]/30 outline-none transition-all text-base"
-                  required
-                />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#F4F6F8] blueprint-grid">
+      <div className="w-full max-w-[460px] animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Main Login Card */}
+        <div className="bg-[#FAFBFC] rounded-[24px] border border-[#E2E5E9] overflow-hidden flex flex-col">
+          
+          {/* Top accent bar */}
+          <div className="h-2 bg-[#5B9AAD]" />
+          
+          <div className="p-8 md:p-12 space-y-10">
+            {/* Logo area - centered */}
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-[#5B9AAD] rounded-xl flex items-center justify-center">
+                  <span className="text-[#F8FAFC] font-bold text-xl">JK</span>
+                </div>
+                <div className="text-left">
+                  <h1 className="text-xl font-bold text-[#0F172A] leading-tight tracking-tight">JK Stavby</h1>
+                  <p className="text-sm text-[#5B9AAD] font-medium leading-tight">Stavební spol.</p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-base font-medium text-[#0F172A]">Heslo</label>
-                {/* Removed invalid size prop from Link component */}
-                <Link to="/forgot-password" className="text-base text-[#5B9AAD] hover:underline font-medium">
-                  Zapomněli jste heslo?
-                </Link>
+            {/* Welcome Title */}
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-[#0F172A] mb-2 tracking-tight">Vítejte zpět</h2>
+              <p className="text-base text-[#475569] font-medium leading-relaxed">Správa projektů a financí JK Stavby</p>
+            </div>
+
+            {/* Form Fields */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* E-mail Field */}
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm text-[#475569] font-bold tracking-wide">
+                  E-mail
+                </label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#475569]" size={20} />
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 min-h-[56px] bg-[#FAFBFC] border border-[#E2E5E9] rounded-2xl text-lg text-[#0F172A] placeholder-[#5C6878] focus:outline-none focus:border-[#5B9AAD] transition-all font-semibold"
+                    placeholder="marek.janota@jkstavby.cz"
+                    required
+                  />
+                </div>
               </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] transition-colors group-focus-within:text-[#5B9AAD]" size={20} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Zadejte heslo"
-                  className="w-full pl-12 pr-12 py-3 bg-[#F8FAFC] border-none rounded-xl focus:ring-2 focus:ring-[#5B9AAD]/30 outline-none transition-all text-base"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors"
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="text-sm text-[#475569] font-bold tracking-wide">
+                    Heslo
+                  </label>
+                  <Link 
+                    to="/forgot-password"
+                    className="text-sm text-[#5B9AAD] font-bold hover:text-[#4A8A9D] transition-colors"
+                  >
+                    Zapomenuto?
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#475569]" size={20} />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-14 py-4 min-h-[56px] bg-[#FAFBFC] border border-[#E2E5E9] rounded-2xl text-lg text-[#0F172A] placeholder-[#5C6878] focus:outline-none focus:border-[#5B9AAD] transition-all font-semibold"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#475569] hover:text-[#0F172A] transition-colors p-2"
+                    aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
+                  >
+                    {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4.5 min-h-[64px] bg-[#5B9AAD] text-[#F8FAFC] rounded-2xl text-xl font-bold hover:bg-[#4A8A9D] transition-all disabled:opacity-50 flex items-center justify-center gap-3 active:scale-[0.98]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={24} className="animate-spin" />
+                    Přihlašování...
+                  </>
+                ) : (
+                  <>
+                    Vstoupit do dashboardu
+                    <ArrowRight size={24} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Footer Credits inside the card */}
+            <div className="pt-8 border-t border-[#E2E5E9] text-center space-y-1 text-sm font-medium">
+              <p className="text-[#475569]">© 2026 JK Stavební spol. s r.o.</p>
+              <p className="text-[#475569]">
+                Vytvořil{' '}
+                <a 
+                  href="https://vilim.one" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-[#5B9AAD] font-bold hover:text-[#4A8A9D] transition-colors underline-offset-4"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+                  vilim.one
+                </a>
+              </p>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-[#5B9AAD] hover:bg-[#4A8A9D] text-white rounded-xl font-semibold shadow-lg shadow-[#5B9AAD]/20 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:transform-none text-base"
-            >
-              {loading ? 'Přihlašování...' : 'Přihlásit se'}
-              {!loading && <ArrowRight size={20} />}
-            </button>
-          </form>
-
-          {/* Credits Area inside card */}
-          <div className="mt-8 pt-8 border-t border-gray-50 text-center space-y-1">
-            <p className="text-xs text-gray-400">
-              © 2026 JK Stavební spol. s r.o.
-            </p>
-            <p className="text-xs text-gray-400">
-              Vytvořil <a href="https://vilim.one" target="_blank" rel="noopener noreferrer" className="hover:text-gray-600 hover:underline transition-colors font-medium">vilim.one</a>
-            </p>
           </div>
+
+          {/* Bottom accent bar */}
+          <div className="h-2 bg-[#5B9AAD]" />
         </div>
       </div>
+      {ToastComponent}
     </div>
   );
 };

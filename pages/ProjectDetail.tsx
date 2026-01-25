@@ -1,161 +1,52 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { 
-  ArrowLeft, Wallet, TrendingUp, Calendar, FileText, Loader2, Download, 
-  Home, ChevronRight, Calculator, X, Save, AlertCircle, Info, Search, ArrowUpDown, Edit2, Plus
+  Wallet, TrendingUp, Calendar, Loader2, Home, ChevronRight, Pencil, Check, Clock, Info, 
+  ArrowUpRight, ArrowDownRight, FileText, LayoutDashboard, History, FileCheck, ShieldCheck, MapPin
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { supabase, updateProject } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { budgetService } from '../lib/userService';
 import { Project, Invoice } from '../types';
-import { formatCurrency, formatDate, COLORS } from '../constants';
+import { formatCurrency, formatDate } from '../constants';
 import { useToast } from '../components/Toast';
+import { useAuth } from '../contexts/AuthContext';
+import BudgetHistory from '../components/BudgetHistory';
 
-const EditModal: React.FC<{ 
-  project: Project; 
-  onClose: () => void; 
-  onSave: () => void; 
-  showToast: any 
-}> = ({ project, onClose, onSave, showToast }) => {
-  const [formData, setFormData] = useState({
-    planned_budget: project.planned_budget,
-    status: project.status,
-    notes: ''
-  });
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchNotes = async () => {
-      const { data } = await supabase.from('projects').select('notes').eq('id', project.id).single();
-      if (data) setFormData(prev => ({ ...prev, notes: data.notes || '' }));
-    };
-    fetchNotes();
-  }, [project.id]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { error } = await updateProject(project.id, formData);
-      if (error) throw error;
-      showToast('Projekt byl úspěšně aktualizován', 'success');
-      onSave();
-    } catch (err) {
-      showToast('Chyba při ukládání projektu', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#FAFBFC] border border-[#E2E8F0] rounded-3xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-8 py-6 flex items-center justify-between border-b border-[#E2E8F0]">
-          <h3 className="text-2xl font-bold">Nastavení rozpočtu</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-[#64748B]"><X size={24} /></button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          <div className="space-y-2">
-            <label className="text-base font-bold text-[#64748B]">Název projektu (nelze měnit)</label>
-            <input disabled value={project.name} className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] text-slate-400 rounded-2xl cursor-not-allowed outline-none text-base" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-base font-bold text-[#64748B]">Plánovaný rozpočet (Kč)</label>
-              <input 
-                type="number" 
-                value={formData.planned_budget}
-                onChange={e => setFormData({...formData, planned_budget: Number(e.target.value)})}
-                className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 text-base"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-base font-bold text-[#64748B]">Status projektu</label>
-              <select 
-                value={formData.status}
-                onChange={e => setFormData({...formData, status: e.target.value as any})}
-                className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 appearance-none text-base font-bold"
-              >
-                <option value="active">Aktivní</option>
-                <option value="completed">Dokončeno</option>
-                <option value="on_hold">Pozastaveno</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-base font-bold text-[#64748B]">Poznámky</label>
-            <textarea 
-              rows={4} 
-              value={formData.notes}
-              onChange={e => setFormData({...formData, notes: e.target.value})}
-              className="w-full px-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none focus:ring-2 focus:ring-[#5B9AAD]/30 resize-none text-base"
-              placeholder="Zadejte doplňující informace k projektu..."
-            />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="flex-1 py-4 bg-white border border-[#E2E8F0] text-[#64748B] font-bold rounded-2xl hover:bg-slate-50 transition-all text-base"
-            >
-              Zrušit
-            </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="flex-1 py-4 bg-[#5B9AAD] text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-all text-base"
-            >
-              {loading ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
-              {loading ? 'Ukládám...' : 'Uložit změny'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+type TabType = 'overview' | 'history' | 'documents';
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { profile, isAdmin } = useAuth();
+  
   const [project, setProject] = useState<Project | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [notes, setNotes] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [showEdit, setShowEdit] = useState(false);
-  const [searchInvoice, setSearchInvoice] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortConfig, setSortConfig] = useState<{key: keyof Invoice, direction: 'asc' | 'desc'} | null>(null);
-  
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [editedNotes, setEditedNotes] = useState('');
-
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { showToast, ToastComponent } = useToast();
+
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [budgetValue, setBudgetValue] = useState(0);
+  const [budgetReason, setBudgetReason] = useState('');
+  const [isSavingBudget, setIsSavingBudget] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const [projRes, invRes, noteRes] = await Promise.all([
+      const [projRes, invRes] = await Promise.all([
         supabase.from('project_dashboard').select('*').eq('id', id).single(),
-        supabase.from('project_invoices').select('*').eq('project_id', id).order('date_issue', { ascending: true }),
-        supabase.from('projects').select('notes').eq('id', id).single()
+        supabase.from('project_invoices').select('*').eq('project_id', id).order('date_issue', { ascending: true })
       ]);
-
-      if (projRes.error) throw projRes.error;
-      setProject(projRes.data);
+      if (projRes.data) {
+        setProject(projRes.data);
+        setBudgetValue(projRes.data.planned_budget || 0);
+      }
       setInvoices(invRes.data || []);
-      const n = noteRes.data?.notes || '';
-      setNotes(n);
-      setEditedNotes(n);
-    } catch (err: any) {
-      showToast('Nepodařilo se načíst detail projektu', 'error');
+    } catch (err) {
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -165,399 +56,238 @@ const ProjectDetail: React.FC = () => {
     fetchData();
   }, [id]);
 
-  const stats = useMemo(() => {
-    if (!project) return { budget: 0, costs: 0, remaining: 0, count: 0, percentage: 0 };
-    return {
-      budget: project.planned_budget,
-      costs: project.total_costs,
-      remaining: project.planned_budget - project.total_costs,
-      count: project.invoice_count,
-      percentage: project.budget_usage_percent
-    };
-  }, [project]);
+  const handleSaveBudget = async () => {
+    if (!project || !profile) return;
+    
+    if (budgetValue === project.planned_budget) {
+      setIsEditingBudget(false);
+      return;
+    }
 
-  const invoiceStats = useMemo(() => {
-    const paid = invoices.filter(i => i.payment_status === 'paid').length;
-    const pending = invoices.filter(i => i.payment_status === 'pending').length;
-    const overdue = invoices.filter(i => i.payment_status === 'overdue').length;
-    const total = invoices.length;
-    return { paid, pending, overdue, total };
-  }, [invoices]);
+    if (!budgetReason.trim()) {
+      showToast('Zadejte důvod změny rozpočtu', 'error');
+      return;
+    }
+    
+    setIsSavingBudget(true);
+    try {
+      await budgetService.updateBudget(
+        project.id,
+        profile.id,
+        project.planned_budget,
+        budgetValue,
+        budgetReason
+      );
+      
+      await fetchData();
+      setIsEditingBudget(false);
+      setBudgetReason('');
+      showToast('Rozpočet byl úspěšně uložen', 'success');
+    } catch (err) {
+      console.error('Error saving budget:', err);
+      showToast('Chyba při ukládání rozpočtu', 'error');
+    } finally {
+      setIsSavingBudget(false);
+    }
+  };
 
   const chartData = useMemo(() => {
     let sum = 0;
     return invoices.map(inv => {
       sum += inv.total_amount;
-      return {
-        date: formatDate(inv.date_issue),
-        total: sum
-      };
+      return { date: formatDate(inv.date_issue), total: sum };
     });
   }, [invoices]);
 
-  const filteredInvoices = useMemo(() => {
-    let result = invoices.filter(inv => {
-      const matchSearch = inv.invoice_number.toLowerCase().includes(searchInvoice.toLowerCase()) || 
-                          inv.supplier_name.toLowerCase().includes(searchInvoice.toLowerCase());
-      const matchStatus = statusFilter === 'all' || inv.payment_status === statusFilter;
-      return matchSearch && matchStatus;
-    });
-
-    if (sortConfig) {
-      result.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [invoices, searchInvoice, statusFilter, sortConfig]);
-
-  const handleSort = (key: keyof Invoice) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const handleSaveNotes = async () => {
-    if (!id) return;
-    try {
-      const { error } = await supabase.from('projects').update({ notes: editedNotes }).eq('id', id);
-      if (error) throw error;
-      setNotes(editedNotes);
-      setIsEditingNotes(false);
-      showToast('Poznámky byly uloženy', 'success');
-    } catch (err) {
-      showToast('Chyba při ukládání poznámek', 'error');
-    }
-  };
-
-  if (loading && !project) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
-        <p className="text-lg text-[#64748B] font-medium">Načítání detailu projektu...</p>
-      </div>
-    );
-  }
-
-  if (!project) return null;
-
-  const statusMap = {
-    active: { label: 'Aktivní', styles: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-    completed: { label: 'Dokončeno', styles: 'bg-blue-50 text-blue-600 border-blue-200' },
-    on_hold: { label: 'Pozastaveno', styles: 'bg-amber-50 text-amber-600 border-amber-200' }
-  };
-  const status = statusMap[project.status] || statusMap.active;
+  if (loading || !project) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5B9AAD]" size={40} /></div>;
 
   return (
-    <div className="space-y-8 pb-16 animate-in fade-in duration-500">
-      <nav className="flex items-center gap-3 text-base font-semibold text-[#64748B]">
-        <Link to="/" className="hover:text-[#5B9AAD] flex items-center gap-1.5"><Home size={18} /> Přehled</Link>
-        <ChevronRight size={14} />
-        <Link to="/projects" className="hover:text-[#5B9AAD]">Projekty</Link>
-        <ChevronRight size={14} />
-        <span className="text-[#0F172A]">{project.name}</span>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-16">
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm font-bold text-[#5C6878] uppercase tracking-wider">
+        <Link to="/" className="hover:text-[#5B9AAD] flex items-center gap-1.5 transition-colors"><Home size={14} /> Přehled</Link>
+        <ChevronRight size={10} className="text-[#CDD1D6]" />
+        <Link to="/projects" className="hover:text-[#5B9AAD] transition-colors">Projekty</Link>
+        <ChevronRight size={10} className="text-[#CDD1D6]" />
+        <span className="text-[#0F172A] truncate max-w-[200px]">{project.name}</span>
       </nav>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <div className="flex items-center gap-4 mb-3">
-            <span className={`px-4 py-1 text-xs font-bold rounded-lg uppercase border ${status.styles}`}>
-              {status.label}
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-[#E2E5E9]">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <span className="px-3 py-1 bg-[#F4F6F8] border border-[#E2E5E9] rounded-xl text-sm font-bold text-[#475569] uppercase tracking-widest">
+               {project.code}
+             </span>
+             <span className={`px-3 py-1 rounded-xl text-sm font-bold uppercase tracking-widest ${
+              project.status === 'active' ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#475569]'
+            }`}>
+              {project.status === 'active' ? '● Ve výstavbě' : project.status === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
             </span>
-            <span className="text-[#64748B] text-xs font-bold uppercase tracking-widest">Kód zakázky: {project.code}</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#0F172A]">{project.name}</h1>
+          <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">{project.name}</h1>
+          <div className="flex items-center gap-4 text-sm font-medium text-[#475569]">
+            <span className="flex items-center gap-1.5"><MapPin size={16} className="text-[#5B9AAD]" /> Lokalita neuvedena</span>
+            <span className="flex items-center gap-1.5"><Calendar size={16} className="text-[#5B9AAD]" /> Zahájeno 2024</span>
+          </div>
         </div>
-        <button 
-          onClick={() => setShowEdit(true)}
-          className="w-full md:w-auto px-8 py-4 bg-[#FAFBFC] border border-[#E2E8F0] text-[#0F172A] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all text-base"
-        >
-          <Calculator size={20} />
-          Zadat rozpočet
-        </button>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Plánovaný rozpočet</p>
-          <h3 className="text-2xl font-bold text-[#0F172A] mb-5">{formatCurrency(stats.budget)}</h3>
-          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl w-fit"><Wallet size={22} /></div>
-        </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Skutečné náklady</p>
-          <h3 className={`text-2xl font-bold mb-5 ${stats.percentage > 100 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
-            {formatCurrency(stats.costs)}
-          </h3>
-          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl w-fit"><TrendingUp size={22} /></div>
-        </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Zbývá z rozpočtu</p>
-          <h3 className={`text-2xl font-bold mb-5 ${stats.remaining < 0 ? 'text-rose-600' : 'text-[#0F172A]'}`}>
-            {formatCurrency(stats.remaining)}
-          </h3>
-          <div className="p-2.5 bg-slate-50 text-slate-600 rounded-xl w-fit"><Calendar size={22} /></div>
-        </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E8F0]">
-          <p className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">Celkem faktur</p>
-          <h3 className="text-2xl font-bold text-[#0F172A] mb-1">{stats.count}</h3>
-          
-          <div className="w-full h-2 bg-slate-100 rounded-full flex overflow-hidden my-3">
-            <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.paid / invoiceStats.total) * 100 : 0}%` }} className="bg-[#10B981] h-full" title="Zaplaceno" />
-            <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.pending / invoiceStats.total) * 100 : 0}%` }} className="bg-[#F59E0B] h-full" title="Čekající" />
-            <div style={{ width: `${invoiceStats.total > 0 ? (invoiceStats.overdue / invoiceStats.total) * 100 : 0}%` }} className="bg-[#EF4444] h-full" title="Po splatnosti" />
-          </div>
-          <p className="text-[10px] text-[#475569] font-semibold whitespace-nowrap">
-            {invoiceStats.paid} zaplaceno · {invoiceStats.pending} čekající · {invoiceStats.overdue} po splatnosti
-          </p>
+        {/* Tab Switcher */}
+        <div className="flex p-1 bg-[#F4F6F8] rounded-2xl border border-[#E2E5E9] w-full md:w-auto">
+          <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Přehled" />
+          <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={History} label="Audit Log" />
+          <TabButton active={activeTab === 'documents'} onClick={() => setActiveTab('documents')} icon={FileText} label="Dokumentace" />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
-        <div className="lg:col-span-1 flex flex-col gap-8">
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0]">
-            <h3 className="text-xl font-bold mb-6">Čerpání rozpočtu</h3>
-            <div className="flex justify-between items-end mb-4">
-              <span className="text-4xl font-bold text-[#0F172A]">{stats.percentage.toFixed(1)}%</span>
-              <span className="text-sm font-bold text-[#64748B] uppercase tracking-wider">Průběh</span>
-            </div>
-            <div className="w-full h-5 bg-slate-100 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-1000 ${
-                  stats.percentage > 100 ? 'bg-rose-500' : stats.percentage > 80 ? 'bg-amber-500' : 'bg-emerald-500'
-                }`}
-                style={{ width: `${Math.min(stats.percentage, 100)}%` }}
-              />
-            </div>
-            {stats.percentage > 100 && (
-              <div className="mt-6 p-5 bg-rose-50 rounded-2xl flex items-start gap-4 border border-rose-100">
-                <AlertCircle size={22} className="text-rose-600 shrink-0 mt-0.5" />
-                <p className="text-base text-rose-800 leading-relaxed font-semibold">
-                  Pozor: Rozpočet byl překročen o {formatCurrency(Math.abs(stats.remaining))}.
-                </p>
+      {activeTab === 'overview' && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`bg-[#FAFBFC] rounded-3xl p-6 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-8 ring-[#5B9AAD]/5' : 'border-[#E2E5E9]'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs font-bold text-[#475569] uppercase tracking-widest">Smluvní Rozpočet</span>
+                <div className="flex items-center gap-1">
+                  {isAdmin && !isEditingBudget && (
+                    <button onClick={() => setIsEditingBudget(true)} className="p-2 text-[#5B9AAD] hover:bg-[#E1EFF3] rounded-xl transition-all"><Pencil size={18} /></button>
+                  )}
+                  <div className="w-10 h-10 bg-[#F0F7F9] rounded-2xl flex items-center justify-center text-[#5B9AAD]"><Wallet size={20} /></div>
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Poznámky k projektu</h3>
-              {!isEditingNotes && notes && (
-                <button 
-                  onClick={() => setIsEditingNotes(true)}
-                  className="p-2 text-[#64748B] hover:text-[#5B9AAD] hover:bg-slate-50 rounded-lg transition-colors"
-                >
-                  <Edit2 size={16} />
-                </button>
+              {isEditingBudget && isAdmin ? (
+                <div className="space-y-4">
+                  <input
+                    type="number"
+                    value={budgetValue}
+                    onChange={(e) => setBudgetValue(Number(e.target.value))}
+                    className="w-full px-4 py-3 bg-white border border-[#E2E5E9] rounded-2xl text-lg text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all font-bold"
+                  />
+                  <textarea
+                    value={budgetReason}
+                    onChange={(e) => setBudgetReason(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-[#E2E5E9] rounded-2xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all min-h-[80px]"
+                    placeholder="Důvod úpravy rozpočtu..."
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => { setIsEditingBudget(false); setBudgetValue(project.planned_budget); setBudgetReason(''); }} className="flex-1 py-2.5 bg-[#FAFBFC] border border-[#E2E5E9] text-[#0F172A] rounded-xl text-xs font-bold uppercase tracking-widest">Zrušit</button>
+                    <button onClick={handleSaveBudget} disabled={isSavingBudget} className="flex-1 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">{isSavingBudget ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Uložit</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                   <h3 className="text-2xl font-bold tracking-tight text-[#0F172A] mb-1">{formatCurrency(project.planned_budget)}</h3>
+                   <p className="text-xs font-bold text-[#5B9AAD] uppercase tracking-wider flex items-center gap-1"><ShieldCheck size={12} /> Schváleno investorem</p>
+                </div>
               )}
             </div>
 
-            {isEditingNotes ? (
-              <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                <textarea 
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border-2 border-[#E2E8F0] rounded-2xl outline-none focus:border-[#5B9AAD]/30 text-base min-h-[120px] resize-none"
-                  placeholder="Zadejte poznámky k projektu..."
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleSaveNotes}
-                    className="flex-1 bg-[#5B9AAD] text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#4A8A9D] transition-colors"
-                  >
-                    <Save size={16} /> Uložit
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setIsEditingNotes(false);
-                      setEditedNotes(notes);
-                    }}
-                    className="px-4 py-2.5 bg-slate-100 text-[#64748B] rounded-xl font-bold hover:bg-slate-200 transition-colors"
-                  >
-                    Zrušit
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="group h-full flex flex-col">
-                {notes ? (
-                  <div className="p-6 bg-white rounded-2xl border border-[#E2E8F0] flex-1">
-                    <p className="text-base text-slate-700 leading-relaxed whitespace-pre-wrap">{notes}</p>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-8 bg-white rounded-2xl border border-dashed border-[#E2E8F0]">
-                    <p className="text-slate-400 font-medium mb-4 italic">Žádné poznámky</p>
-                    <button 
-                      onClick={() => setIsEditingNotes(true)}
-                      className="flex items-center gap-2 text-[#5B9AAD] font-bold hover:underline"
-                    >
-                      <Plus size={18} /> Přidat poznámku
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <StatCard label="Čerpání k dnešku" value={formatCurrency(project.total_costs)} icon={TrendingUp} />
+            <StatCard label="Zůstatek financí" value={formatCurrency(project.planned_budget - project.total_costs)} icon={FileCheck} subValue={`${((project.planned_budget - project.total_costs) / project.planned_budget * 100).toFixed(1)}% zbývá`} />
+            <StatCard label="Efektivita nákladů" value={`${project.budget_usage_percent.toFixed(1)}%`} icon={TrendingUp} isWarning={project.budget_usage_percent > 90} />
           </div>
-        </div>
 
-        <div className="lg:col-span-2 flex">
-          <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E8F0] w-full flex flex-col h-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <h3 className="text-xl font-bold">Vývoj nákladů v čase</h3>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-[#5B9AAD]" />
-                  <span className="text-xs font-bold text-[#64748B]">Skutečné náklady</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-0 border-t-2 border-dashed border-slate-400" />
-                  <span className="text-xs font-bold text-[#64748B]">Plánovaný rozpočet</span>
-                </div>
-              </div>
+          <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9]">
+            <div className="flex items-center justify-between mb-10">
+               <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Finanční progres stavby</h3>
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
+                    <span className="text-xs font-bold text-[#475569] uppercase">Skutečnost</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#DC2626]" />
+                    <span className="text-xs font-bold text-[#475569] uppercase">Limit</span>
+                  </div>
+               </div>
             </div>
-            
-            <div className="flex-1 min-h-[400px]">
+            <div className="h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={COLORS.primary[500]} stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor={COLORS.primary[500]} stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#64748B', fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#64748B', fontSize: 12 }}
-                    tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E5E9" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: 'none', fontSize: '14px' }}
-                    formatter={(val: any) => formatCurrency(val)}
+                    contentStyle={{ borderRadius: '24px', border: '1px solid #E2E5E9', backgroundColor: '#FAFBFC', fontSize: '14px', fontWeight: 'bold', boxShadow: 'none' }} 
+                    formatter={(val: any) => [formatCurrency(val), 'Náklady']}
                   />
-                  
-                  <ReferenceLine 
-                    y={stats.budget} 
-                    stroke="#94A3B8" 
-                    strokeDasharray="5 5" 
-                    label={{ 
-                      value: formatCurrency(stats.budget), 
-                      position: 'right', 
-                      fill: '#64748B', 
-                      fontSize: 10,
-                      fontWeight: 'bold',
-                      offset: 10
-                    }} 
-                  />
-
-                  <Area type="monotone" dataKey="total" stroke={COLORS.primary[500]} strokeWidth={4} fillOpacity={1} fill="url(#colorTotal)" />
+                  <ReferenceLine y={project.planned_budget} stroke="#DC2626" strokeDasharray="8 6" strokeWidth={2} label={{ value: 'MAX LIMIT', position: 'insideTopRight', fill: '#DC2626', fontSize: 10, fontWeight: '900' }} />
+                  <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" animationDuration={1500} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E8F0] overflow-hidden p-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-10">
-          <h3 className="text-xl font-bold">Přehled faktur projektu</h3>
-          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-            <div className="relative flex-1 lg:w-72">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-              <input 
-                placeholder="Hledat fakturu nebo dodavatele..." 
-                value={searchInvoice}
-                onChange={e => setSearchInvoice(e.target.value)}
-                className="pl-12 pr-5 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none text-base w-full focus:ring-2 focus:ring-[#5B9AAD]/20"
-              />
-            </div>
-            <select 
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className="px-6 py-3.5 bg-white border border-[#E2E8F0] rounded-2xl outline-none text-base font-bold appearance-none text-[#64748B] min-w-[180px]"
-            >
-              <option value="all">Všechny stavy</option>
-              <option value="paid">Uhrazeno</option>
-              <option value="pending">Čekající</option>
-              <option value="overdue">Neuhrazeno</option>
-            </select>
-          </div>
+      {activeTab === 'history' && (
+        <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9] animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <BudgetHistory projectId={id!} />
         </div>
+      )}
 
-        <div className="overflow-x-auto -mx-8 px-8">
-          <table className="w-full text-left min-w-[800px]">
-            <thead>
-              <tr className="text-xs font-bold text-[#64748B] uppercase tracking-wider border-b border-slate-50 pb-4">
-                <th className="px-4 py-4 cursor-pointer hover:text-[#5B9AAD] group" onClick={() => handleSort('invoice_number')}>
-                  Číslo faktury <ArrowUpDown size={12} className="inline ml-1" />
-                </th>
-                <th className="px-4 py-4 cursor-pointer hover:text-[#5B9AAD] group" onClick={() => handleSort('supplier_name')}>
-                  Dodavatel <ArrowUpDown size={12} className="inline ml-1" />
-                </th>
-                <th className="px-4 py-4 cursor-pointer hover:text-[#5B9AAD] group" onClick={() => handleSort('date_issue')}>
-                  Datum vystavení <ArrowUpDown size={12} className="inline ml-1" />
-                </th>
-                <th className="px-4 py-4 text-right cursor-pointer hover:text-[#5B9AAD] group" onClick={() => handleSort('total_amount')}>
-                  Částka <ArrowUpDown size={12} className="inline ml-1" />
-                </th>
-                <th className="px-4 py-4 text-center">Stav platby</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredInvoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-4 py-6 text-base font-semibold text-[#0F172A]">{inv.invoice_number}</td>
-                  <td className="px-4 py-6 text-base text-[#475569] font-medium">{inv.supplier_name}</td>
-                  <td className="px-4 py-6 text-base text-[#475569]">{formatDate(inv.date_issue)}</td>
-                  <td className="px-4 py-6 text-base font-bold text-right text-[#0F172A]">{formatCurrency(inv.total_amount)}</td>
-                  <td className="px-4 py-6 text-center">
-                    <span className={`px-4 py-1 text-xs font-bold rounded-full uppercase border ${
-                      inv.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                      inv.payment_status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-rose-50 text-rose-600 border-rose-100'
-                    }`}>
-                      {inv.payment_status === 'paid' ? 'Uhrazeno' : inv.payment_status === 'pending' ? 'Čekající' : 'Neuhrazeno'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {filteredInvoices.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-24 text-center text-[#64748B] text-lg font-medium">Nebyly nalezeny žádné faktury splňující kritéria.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {activeTab === 'documents' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <DocumentCard title="Projektová dokumentace" count={12} lastUpdate="včera" icon={FileText} />
+           <DocumentCard title="Smlouvy a dodatky" count={4} lastUpdate="před 3 dny" icon={ShieldCheck} />
+           <DocumentCard title="Stavební deník (Digitální)" count={86} lastUpdate="dnes v 08:30" icon={Check} />
+           <div className="lg:col-span-3 py-16 text-center bg-[#F8F9FA] rounded-3xl border border-[#E2E5E9] border-dashed">
+              <p className="text-[#5C6878] font-bold uppercase tracking-widest text-sm mb-2">Správa souborů</p>
+              <p className="text-[#0F172A] font-medium mb-6">Modul pro nahrávání dokumentace bude dostupný ve verzi 2.1</p>
+              <button disabled className="px-8 py-3 bg-[#E2E5E9] text-[#5C6878] rounded-2xl text-xs font-bold uppercase tracking-widest cursor-not-allowed">Nahrát dokument</button>
+           </div>
         </div>
-      </div>
-
-      {showEdit && (
-        <EditModal 
-          project={project} 
-          showToast={showToast}
-          onClose={() => setShowEdit(false)} 
-          onSave={() => {
-            setShowEdit(false);
-            fetchData();
-          }} 
-        />
       )}
 
       {ToastComponent}
     </div>
   );
 };
+
+const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: any; label: string }> = ({ active, onClick, icon: Icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all uppercase tracking-widest ${
+      active ? 'bg-[#5B9AAD] text-white' : 'text-[#475569] hover:bg-[#E2E5E9]/50'
+    }`}
+  >
+    <Icon size={16} />
+    <span className="hidden sm:inline">{label}</span>
+  </button>
+);
+
+const StatCard: React.FC<{ label: string; value: string; icon: any; isWarning?: boolean; subValue?: string }> = ({ label, value, icon: Icon, isWarning, subValue }) => (
+  <div className={`bg-[#FAFBFC] rounded-3xl p-6 border transition-all ${isWarning ? 'border-[#DC2626] bg-[#FEF2F2]/30' : 'border-[#E2E5E9]'}`}>
+    <div className="flex items-center justify-between mb-4">
+      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isWarning ? 'text-[#DC2626]' : 'text-[#475569]'}`}>{label}</span>
+      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F7F9] text-[#5B9AAD]'}`}>
+        <Icon size={18} />
+      </div>
+    </div>
+    <div className="space-y-1">
+      <h3 className={`text-2xl font-bold tracking-tight ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
+      {subValue && <p className="text-[10px] font-bold text-[#5C6878] uppercase tracking-wider">{subValue}</p>}
+    </div>
+  </div>
+);
+
+const DocumentCard: React.FC<{ title: string; count: number; lastUpdate: string; icon: any }> = ({ title, count, lastUpdate, icon: Icon }) => (
+  <div className="bg-[#FAFBFC] p-6 rounded-3xl border border-[#E2E5E9] hover:border-[#5B9AAD]/30 transition-all cursor-pointer group">
+     <div className="w-12 h-12 bg-[#F0F7F9] text-[#5B9AAD] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[#5B9AAD] group-hover:text-white transition-all">
+        <Icon size={24} />
+     </div>
+     <h4 className="text-lg font-bold text-[#0F172A] mb-1">{title}</h4>
+     <p className="text-sm font-medium text-[#475569] mb-4">{count} dokumentů</p>
+     <div className="flex items-center justify-between pt-4 border-t border-[#E2E5E9] text-[10px] font-bold text-[#5C6878] uppercase tracking-widest">
+        <span>Poslední změna</span>
+        <span>{lastUpdate}</span>
+     </div>
+  </div>
+);
 
 export default ProjectDetail;
