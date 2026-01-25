@@ -38,7 +38,6 @@ export const userService = {
     if (authError) throw authError;
     if (!authData.user) throw new Error('Nepodařilo se vytvořit uživatele');
 
-    // Wait for the auth trigger to create the profile record if it hasn't yet
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const { error: updateError } = await supabase

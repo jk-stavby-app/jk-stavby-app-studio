@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -14,7 +13,6 @@ import Admin from './pages/Admin';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
-import AiAssistant from './components/AiAssistant';
 import { Loader2 } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,8 +43,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </footer>
       </div>
       <BottomNav />
-      {/* Persistent AI Assistant */}
-      <AiAssistant />
     </div>
   );
 };

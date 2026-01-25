@@ -1,5 +1,5 @@
 {
-  "name": "jk-stavební-spol-app",
+  "name": "jk-stavby---construction-management",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,14 +10,11 @@
   },
   "dependencies": {
     "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "react-router-dom": "^7.13.0",
     "lucide-react": "^0.563.0",
+    "react-router-dom": "^7.13.0",
+    "react-dom": "^19.2.3",
     "recharts": "^3.7.0",
-    "@supabase/supabase-js": "^2.91.1",
-    "@google/genai": "^1.38.0",
-    "vite": "^7.3.1",
-    "@vitejs/plugin-react": "^5.1.2"
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
