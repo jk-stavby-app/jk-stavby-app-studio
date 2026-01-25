@@ -182,12 +182,4 @@ src/
 └── types.ts          # TypeScript interfaces
 ```
 
-## 🔑 Default Login
-
-For testing purposes:
-- **Email**: marek.janota@jkstavby.cz
-- **Password**: password123
-
-## 📝 License
-
 © 2026 JK Stavební spol. s r.o. | Created by [vilim.one](https://vilim.one)
