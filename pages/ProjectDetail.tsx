@@ -1,21 +1,23 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   Wallet, TrendingUp, Calendar, Loader2, Home, ChevronRight, Pencil, Check, Clock, Info, 
-  ArrowUpRight, ArrowDownRight, FileText, LayoutDashboard, History, FileCheck, ShieldCheck, MapPin
+  ArrowUpRight, ArrowDownRight, FileText, LayoutDashboard, History, FileCheck, ShieldCheck, MapPin, Sparkles, Wand2
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { supabase } from '../lib/supabase';
 import { budgetService } from '../lib/userService';
+import { aiService } from '../lib/aiService';
 import { Project, Invoice } from '../types';
 import { formatCurrency, formatDate } from '../constants';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import BudgetHistory from '../components/BudgetHistory';
 
-type TabType = 'overview' | 'history' | 'documents';
+type TabType = 'overview' | 'history' | 'documents' | 'ai';
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +33,9 @@ const ProjectDetail: React.FC = () => {
   const [budgetValue, setBudgetValue] = useState(0);
   const [budgetReason, setBudgetReason] = useState('');
   const [isSavingBudget, setIsSavingBudget] = useState(false);
+
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -55,6 +60,20 @@ const ProjectDetail: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  const runAiAnalysis = async () => {
+    if (!project) return;
+    setIsAnalyzing(true);
+    try {
+      const result = await aiService.analyzeProject(project, invoices);
+      setAiAnalysis(result);
+      showToast('AI analýza dokončena', 'success');
+    } catch (err) {
+      showToast('Chyba AI analýzy', 'error');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSaveBudget = async () => {
     if (!project || !profile) return;
@@ -135,6 +154,7 @@ const ProjectDetail: React.FC = () => {
         {/* Tab Switcher */}
         <div className="flex p-1 bg-[#F4F6F8] rounded-2xl border border-[#E2E5E9] w-full md:w-auto">
           <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Přehled" />
+          <TabButton active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} icon={Sparkles} label="AI Analýza" />
           <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={History} label="Audit Log" />
           <TabButton active={activeTab === 'documents'} onClick={() => setActiveTab('documents')} icon={FileText} label="Dokumentace" />
         </div>
@@ -186,42 +206,124 @@ const ProjectDetail: React.FC = () => {
             <StatCard label="Efektivita nákladů" value={`${project.budget_usage_percent.toFixed(1)}%`} icon={TrendingUp} isWarning={project.budget_usage_percent > 90} />
           </div>
 
-          <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9]">
-            <div className="flex items-center justify-between mb-10">
-               <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Finanční progres stavby</h3>
-               <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
-                    <span className="text-xs font-bold text-[#475569] uppercase">Skutečnost</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#DC2626]" />
-                    <span className="text-xs font-bold text-[#475569] uppercase">Limit</span>
-                  </div>
-               </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9] lg:col-span-2">
+              <div className="flex items-center justify-between mb-10">
+                <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Finanční progres stavby</h3>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
+                      <span className="text-xs font-bold text-[#475569] uppercase">Skutečnost</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#DC2626]" />
+                      <span className="text-xs font-bold text-[#475569] uppercase">Limit</span>
+                    </div>
+                </div>
+              </div>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E5E9" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '24px', border: '1px solid #E2E5E9', backgroundColor: '#FAFBFC', fontSize: '14px', fontWeight: 'bold', boxShadow: 'none' }} 
+                      formatter={(val: any) => [formatCurrency(val), 'Náklady']}
+                    />
+                    <ReferenceLine y={project.planned_budget} stroke="#DC2626" strokeDasharray="8 6" strokeWidth={2} label={{ value: 'MAX LIMIT', position: 'insideTopRight', fill: '#DC2626', fontSize: 10, fontWeight: '900' }} />
+                    <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" animationDuration={1500} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E5E9" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '24px', border: '1px solid #E2E5E9', backgroundColor: '#FAFBFC', fontSize: '14px', fontWeight: 'bold', boxShadow: 'none' }} 
-                    formatter={(val: any) => [formatCurrency(val), 'Náklady']}
-                  />
-                  <ReferenceLine y={project.planned_budget} stroke="#DC2626" strokeDasharray="8 6" strokeWidth={2} label={{ value: 'MAX LIMIT', position: 'insideTopRight', fill: '#DC2626', fontSize: 10, fontWeight: '900' }} />
-                  <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" animationDuration={1500} />
-                </AreaChart>
-              </ResponsiveContainer>
+
+            {/* Quick AI Preview in Overview */}
+            <div className="bg-gradient-to-br from-[#FAFBFC] to-[#F0F7F9] rounded-3xl p-8 border border-[#5B9AAD]/30 relative overflow-hidden flex flex-col justify-center text-center">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-[#5B9AAD]/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="relative space-y-4">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm text-[#5B9AAD]">
+                  <Sparkles size={32} />
+                </div>
+                <h4 className="text-xl font-bold text-[#0F172A]">Potřebujete náhled?</h4>
+                <p className="text-sm text-[#475569] font-medium leading-relaxed">
+                  Nechte naši AI analyzovat finanční toky této stavby a navrhnout úspory.
+                </p>
+                <button 
+                  onClick={() => setActiveTab('ai')}
+                  className="w-full py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-[#4A8A9D] transition-all flex items-center justify-center gap-2"
+                >
+                  <Wand2 size={18} />
+                  Analyzovat AI
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'ai' && (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="bg-[#FAFBFC] rounded-3xl p-10 border border-[#E2E5E9] relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#5B9AAD] via-[#10B981] to-[#5B9AAD] animate-pulse" />
+              
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-10">
+                 <div className="space-y-2 text-center md:text-left">
+                    <h3 className="text-2xl font-bold text-[#0F172A] flex items-center justify-center md:justify-start gap-3">
+                       <Sparkles className="text-[#5B9AAD]" />
+                       Smart Project Insights
+                    </h3>
+                    <p className="text-base font-medium text-[#475569]">Pokročilá analytika nákladů a predikce rizik pomocí Gemini AI</p>
+                 </div>
+                 <button 
+                  onClick={runAiAnalysis}
+                  disabled={isAnalyzing}
+                  className="px-8 py-4 bg-[#5B9AAD] text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-[#4A8A9D] transition-all disabled:opacity-50 flex items-center gap-3 shadow-lg"
+                 >
+                   {isAnalyzing ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                   {isAnalyzing ? 'Provádím audit...' : 'Generovat nový audit'}
+                 </button>
+              </div>
+
+              {!aiAnalysis && !isAnalyzing && (
+                 <div className="text-center py-20 bg-[#F4F6F8] rounded-3xl border border-[#E2E5E9] border-dashed">
+                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto text-[#CDD1D6] mb-4">
+                       <Sparkles size={32} />
+                    </div>
+                    <p className="text-[#5C6878] font-bold uppercase tracking-widest text-sm">Připraveno k analýze</p>
+                    <p className="text-[#0F172A] font-medium mt-1">Klikněte na tlačítko výše pro spuštění AI kontroly stavby.</p>
+                 </div>
+              )}
+
+              {isAnalyzing && (
+                 <div className="space-y-6">
+                    <div className="h-6 w-3/4 bg-[#E2E5E9] animate-pulse rounded-lg" />
+                    <div className="h-40 w-full bg-[#E2E5E9] animate-pulse rounded-2xl" />
+                    <div className="grid grid-cols-3 gap-4">
+                       <div className="h-20 bg-[#E2E5E9] animate-pulse rounded-xl" />
+                       <div className="h-20 bg-[#E2E5E9] animate-pulse rounded-xl" />
+                       <div className="h-20 bg-[#E2E5E9] animate-pulse rounded-xl" />
+                    </div>
+                 </div>
+              )}
+
+              {aiAnalysis && !isAnalyzing && (
+                 <div className="prose prose-slate max-w-none prose-p:text-base prose-p:leading-relaxed prose-headings:text-[#0F172A] prose-strong:text-[#5B9AAD] bg-white p-8 rounded-3xl border border-[#E2E5E9] shadow-sm whitespace-pre-wrap font-medium text-[#475569]">
+                    {aiAnalysis}
+                 </div>
+              )}
+
+              <div className="mt-8 flex items-center gap-2 text-xs font-bold text-[#5C6878] uppercase tracking-widest">
+                 <Info size={14} className="text-[#5B9AAD]" />
+                 AI náhledy jsou generovány na základě dostupných faktur a rozpočtových limitů k dnešnímu dni.
+              </div>
+           </div>
         </div>
       )}
 
