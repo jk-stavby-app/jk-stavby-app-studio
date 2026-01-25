@@ -2,7 +2,7 @@
 
 Construction project management dashboard built with React, TypeScript, Tailwind CSS, and Supabase.
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Node.js 18+
