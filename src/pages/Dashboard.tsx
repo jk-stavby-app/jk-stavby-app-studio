@@ -8,6 +8,15 @@ import { COLORS, formatCurrency } from '../constants';
 import { supabase } from '../lib/supabase';
 import { Project, Invoice } from '../types';
 
+// Typ pro statistiky z dashboard_stats VIEW
+interface DashboardStats {
+  total_projects: number;
+  active_projects: number;
+  total_budget: number;
+  total_spent: number;
+  avg_utilization: number;
+}
+
 const StatCard: React.FC<{ 
   label: string; 
   value: string; 
@@ -40,7 +49,8 @@ const StatCard: React.FC<{
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [topProjects, setTopProjects] = useState<Project[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,15 +58,35 @@ const Dashboard: React.FC = () => {
     async function fetchData() {
       try {
         setLoading(true);
-        const { data: projectsData } = await supabase.from('project_dashboard').select('*');
-        const { data: invoicesData } = await supabase
-          .from('project_invoices')
-          .select('*')
-          .order('date_issue', { ascending: false })
-          .limit(5);
+        
+        // Paralelní načítání - 3 rychlé queries místo 1 pomalého
+        const [statsResult, projectsResult, invoicesResult] = await Promise.all([
+          // 1. Statistiky z optimalizovaného VIEW (1 řádek)
+          supabase.from('dashboard_stats').select('*').single(),
+          
+          // 2. Top 5 projektů podle nákladů (LIMIT 5)
+          supabase
+            .from('project_dashboard')
+            .select('id, name, total_costs, last_invoice_date')
+            .order('total_costs', { ascending: false })
+            .limit(5),
+          
+          // 3. Posledních 5 faktur (LIMIT 5)
+          supabase
+            .from('project_invoices')
+            .select('*')
+            .not('project_id', 'is', null)
+            .order('date_issue', { ascending: false })
+            .limit(5)
+        ]);
 
-        setProjects(projectsData || []);
-        setInvoices(invoicesData || []);
+        if (statsResult.data) {
+          setStats(statsResult.data);
+        }
+        
+        setTopProjects(projectsResult.data || []);
+        setInvoices(invoicesResult.data || []);
+        
       } catch (err) {
         console.error('Fetch error:', err);
       } finally {
@@ -66,28 +96,13 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  const stats = useMemo(() => {
-    const totalBudget = projects.reduce((sum, p) => sum + (p.planned_budget || 0), 0);
-    const totalSpent = projects.reduce((sum, p) => sum + (p.total_costs || 0), 0);
-    const activeCount = projects.filter(p => p.status === 'active').length;
-    const avgUtilization = projects.length > 0 
-      ? projects.reduce((sum, p) => sum + (p.budget_usage_percent || 0), 0) / projects.length 
-      : 0;
-    
-    return { totalBudget, totalSpent, activeCount, avgUtilization };
-  }, [projects]);
-
   const chartData = useMemo(() => {
-    return projects
-      .slice()
-      .sort((a, b) => b.total_costs - a.total_costs)
-      .slice(0, 5)
-      .map(p => ({ 
-        id: p.id, 
-        name: p.name, 
-        value: p.total_costs 
-      }));
-  }, [projects]);
+    return topProjects.map(p => ({ 
+      id: p.id, 
+      name: p.name, 
+      value: p.total_costs 
+    }));
+  }, [topProjects]);
 
   const maxVal = useMemo(() => {
     return Math.max(...chartData.map(d => d.value), 1);
@@ -123,10 +138,29 @@ const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8 animate-in">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Celkový rozpočet" value={formatCurrency(stats.totalBudget)} icon={Wallet} trend={{ val: '12.5%', pos: true }} />
-        <StatCard label="Aktuální náklady" value={formatCurrency(stats.totalSpent)} icon={TrendingUp} trend={{ val: '5.4%', pos: true }} />
-        <StatCard label="Aktivní stavby" value={stats.activeCount.toString()} icon={Package} />
-        <StatCard label="Průměrné čerpání" value={`${stats.avgUtilization.toFixed(1)}%`} icon={Users} trend={{ val: '2.1%', pos: false }} />
+        <StatCard 
+          label="Celkový rozpočet" 
+          value={formatCurrency(stats?.total_budget || 0)} 
+          icon={Wallet} 
+          trend={{ val: '12.5%', pos: true }} 
+        />
+        <StatCard 
+          label="Aktuální náklady" 
+          value={formatCurrency(stats?.total_spent || 0)} 
+          icon={TrendingUp} 
+          trend={{ val: '5.4%', pos: true }} 
+        />
+        <StatCard 
+          label="Aktivní stavby" 
+          value={(stats?.active_projects || 0).toString()} 
+          icon={Package} 
+        />
+        <StatCard 
+          label="Průměrné čerpání" 
+          value={`${(stats?.avg_utilization || 0).toFixed(1)}%`} 
+          icon={Users} 
+          trend={{ val: '2.1%', pos: false }} 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
