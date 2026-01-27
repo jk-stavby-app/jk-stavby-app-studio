@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Loader2, X, FileText, Search as SearchIcon, Calendar, Filter, EyeOff } from 'lucide-react';
@@ -7,7 +6,7 @@ import { supabase, createProject } from '../lib/supabase';
 import { Project } from '../types';
 import { useToast } from '../components/Toast';
 
-const PROJECTS_PER_PAGE = 9;
+const PROJECTS_PER_PAGE = 12;
 
 const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
   const navigate = useNavigate();
@@ -43,12 +42,9 @@ const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          {/* Code badge - neutral gray */}
           <span className="px-2.5 py-1 bg-[#F4F6F8] rounded-lg text-sm font-medium text-[#475569] border border-[#E2E5E9]">
             {project.code}
           </span>
-          
-          {/* Year badge - with "Rok" prefix */}
           {project.project_year && (
             <span className="px-2.5 py-1 bg-[#E1EFF3] rounded-lg text-sm font-medium text-[#3A6A7D]">
               Rok {project.project_year}
@@ -237,14 +233,25 @@ const Projects: React.FC = () => {
 
   const fetchProjects = async () => {
     setLoading(true);
-    const { data } = await supabase.from('project_dashboard').select('*');
-    setProjects(data || []);
-    setLoading(false);
+    try {
+      // Optimalizovaný query - řazení podle poslední aktivity na serveru
+      const { data, error } = await supabase
+        .from('project_dashboard')
+        .select('*')
+        .order('last_invoice_date', { ascending: false, nullsFirst: false });
+      
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const years = useMemo(() => {
     const y = projects.map(p => p.project_year).filter((y): y is number => y !== null);
-    // Fix: cast to number for sort
     return Array.from(new Set(y)).sort((a, b) => Number(b) - Number(a));
   }, [projects]);
 
@@ -256,14 +263,12 @@ const Projects: React.FC = () => {
       .filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         p.code.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      // Fix: ensure numeric values for sort
-      .sort((a, b) => (Number(b.total_costs) || 0) - (Number(a.total_costs) || 0));
+      );
+    // Řazení je už z databáze (by last_invoice_date)
   }, [projects, searchTerm, hideEmpty, selectedYear, statusFilter]);
 
   const hiddenCount = useMemo(() => {
     if (!hideEmpty) return 0;
-    // Count projects that would be visible otherwise but are hidden due to hideEmpty
     return projects
       .filter(p => !selectedYear || p.project_year === selectedYear)
       .filter(p => !statusFilter || p.status === statusFilter)
@@ -275,19 +280,16 @@ const Projects: React.FC = () => {
   }, [projects, hideEmpty, selectedYear, statusFilter, searchTerm]);
 
   const visibleProjects = useMemo(() => {
-    // Fix: ensure both operands are treated as numbers for multiplication
     return processedProjects.slice(0, Number(currentPage) * Number(PROJECTS_PER_PAGE));
   }, [processedProjects, currentPage]);
 
   const hasMore = visibleProjects.length < processedProjects.length;
 
   const handleLoadMore = () => {
-    // Fix: ensure numeric addition
     setCurrentPage(prev => Number(prev) + 1);
   };
 
   const handleShowAll = () => {
-    // Fix: ensure numeric division
     setCurrentPage(Math.ceil(processedProjects.length / Number(PROJECTS_PER_PAGE)));
   };
 
@@ -418,7 +420,7 @@ const Projects: React.FC = () => {
               {/* All loaded message */}
               {!hasMore && processedProjects.length > PROJECTS_PER_PAGE && (
                 <p className="text-center mt-12 text-base text-[#475569]">
-                  Zobrazeny všechny projekty
+                  Zobrazeny všechny projekty ({processedProjects.length})
                 </p>
               )}
             </>
