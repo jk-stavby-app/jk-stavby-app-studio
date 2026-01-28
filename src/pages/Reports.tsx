@@ -30,13 +30,18 @@ const Reports: React.FC = () => {
         setLoading(true);
         
         const [statsRes, projRes, invRes] = await Promise.all([
+          // Dashboard stats VIEW
           supabase.from('dashboard_stats').select('*').single(),
+          
+          // Top 10 projektů - OPRAVA: select('*') místo partial select
           supabase
             .from('project_dashboard')
-            .select('id, name, code, planned_budget, total_costs, budget_usage_percent')
+            .select('*')
             .gt('total_costs', 0)
             .order('total_costs', { ascending: false })
             .limit(10),
+          
+          // Max 500 faktur pro agregaci
           supabase
             .from('project_invoices')
             .select('date_issue, total_amount, supplier_name')
@@ -220,76 +225,4 @@ const Reports: React.FC = () => {
                 <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-[#FAFBFC] rounded-xl md:rounded-2xl p-4 md:p-8 border border-[#E2E5E9]">
-        <h3 className="text-lg md:text-xl font-bold text-[#0F172A] mb-6 md:mb-8 tracking-tight">Klíčoví subdodavatelé</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
-          <div className="h-[250px] md:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={supplierData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {supplierData.map((_, index) => (
-                    <Cell key={index} fill={COLORS.chart[index % COLORS.chart.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#FAFBFC', border: '1px solid #E2E5E9', borderRadius: '16px', fontWeight: 'bold' }} 
-                  formatter={(value: number) => tooltipFormatter(value)}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="space-y-3 md:space-y-4">
-            {supplierData.map((s, idx) => (
-              <div key={s.name} className="flex items-center justify-between p-3 md:p-4 bg-[#F8F9FA] rounded-xl md:rounded-2xl border border-[#E2E5E9]">
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS.chart[idx % COLORS.chart.length] }} />
-                  <span className="text-sm md:text-base font-bold text-[#0F172A] truncate">{s.name}</span>
-                </div>
-                <span className="text-sm md:text-base font-bold text-[#5B9AAD] flex-shrink-0 ml-2">{formatCurrency(s.value)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ReportMetric: React.FC<{ 
-  label: string; 
-  value: string; 
-  icon: React.ElementType; 
-  trend?: string; 
-  negative?: boolean 
-}> = ({ label, value, icon: Icon, trend, negative }) => (
-  <div className="bg-[#FAFBFC] p-4 md:p-6 rounded-xl md:rounded-2xl border border-[#E2E5E9] space-y-3 md:space-y-4">
-    <div className="flex items-center justify-between">
-      <div className="w-10 h-10 md:w-12 md:h-12 bg-[#F0F7F9] text-[#5B9AAD] rounded-xl md:rounded-2xl flex items-center justify-center">
-        <Icon size={20} />
-      </div>
-      {trend && (
-        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${negative ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
-          {trend}
-        </span>
-      )}
-    </div>
-    <div>
-      <p className="text-[10px] md:text-xs font-bold text-[#5C6878] uppercase tracking-wider md:tracking-widest mb-1">{label}</p>
-      <h4 className="text-base md:text-xl font-bold text-[#0F172A] truncate" title={value}>{value}</h4>
-    </div>
-  </div>
-);
-
-export default Reports;
+          </d
