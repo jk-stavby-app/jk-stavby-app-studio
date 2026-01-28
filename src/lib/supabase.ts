@@ -8,18 +8,36 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     storageKey: 'jk-stavby-auth',
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // Chrome/Safari fix
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    flowType: 'pkce'
   }
 })
 
-// READ
+// READ - beze změny
 export const getProjects = () => supabase.from('project_dashboard').select('*')
 export const getProject = (id: string) => supabase.from('project_dashboard').select('*').eq('id', id).single()
 export const getProjectInvoices = (projectId: string) => supabase.from('project_invoices').select('*').eq('project_id', projectId)
 
-// WRITE
+// WRITE - beze změny
 export const updateProject = (id: string, data: { planned_budget?: number, status?: string, notes?: string }) => 
   supabase.from('projects').update(data).eq('id', id)
 
 export const createProject = (data: { name: string, code: string, planned_budget: number, status: string, notes?: string }) => 
   supabase.from('projects').insert(data)
+
+// SEARCH - pro globální vyhledávání
+export const searchProjects = (term: string, limit: number = 5) =>
+  supabase
+    .from('project_dashboard')
+    .select('id, name, code')
+    .or(`name.ilike.%${term}%,code.ilike.%${term}%`)
+    .limit(limit)
+
+export const searchInvoices = (term: string, limit: number = 5) =>
+  supabase
+    .from('project_invoices')
+    .select('id, invoice_number, supplier_name, project_name')
+    .or(`invoice_number.ilike.%${term}%,supplier_name.ilike.%${term}%`)
+    .limit(limit)
