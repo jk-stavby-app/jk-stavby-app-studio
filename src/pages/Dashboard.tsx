@@ -60,25 +60,26 @@ const Dashboard: React.FC = () => {
         setLoading(true);
         
         // Paralelní načítání - 3 rychlé queries místo 1 pomalého
-        const [statsResult, projectsResult, invoicesResult] = await Promise.all([
-          // 1. Statistiky z optimalizovaného VIEW (1 řádek)
-          supabase.from('dashboard_stats').select('*').single(),
-          
-          // 2. Top 5 projektů podle nákladů (LIMIT 5)
-          supabase
-            .from('project_dashboard')
-            .select('id, name, total_costs, last_invoice_date')
-            .order('total_costs', { ascending: false })
-            .limit(5),
-          
-          // 3. Posledních 5 faktur (LIMIT 5)
-          supabase
-            .from('project_invoices')
-            .select('*')
-            .not('project_id', 'is', null)
-            .order('date_issue', { ascending: false })
-            .limit(5)
-        ]);
+      const [statsResult, projectsResult, invoicesResult] = await Promise.all([
+  // 1. Statistiky z optimalizovaného VIEW (1 řádek)
+  supabase.from('dashboard_stats').select('*').single(),
+  
+  // 2. Top 5 projektů podle nákladů (LIMIT 5) - OPRAVENO: select('*')
+  supabase
+    .from('project_dashboard')
+    .select('*')
+    .order('total_costs', { ascending: false })
+    .limit(5),
+  
+  // 3. Posledních 5 faktur (LIMIT 5)
+  supabase
+    .from('project_invoices')
+    .select('*')
+    .not('project_id', 'is', null)
+    .order('date_issue', { ascending: false })
+    .limit(5)
+]);
+
 
         if (statsResult.data) {
           setStats(statsResult.data);
