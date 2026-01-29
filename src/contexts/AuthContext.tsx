@@ -39,13 +39,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (error) throw error;
       setProfile(data);
 
-      // Update last_login (fire and forget)
+      // Update last_login (fire and forget - no await)
       supabase
         .from('user_profiles')
         .update({ last_login: new Date().toISOString() })
-        .eq('id', userId)
-        .then(() => {})
-        .catch((err) => console.warn('Failed to update last_login:', err));
+        .eq('id', userId);
 
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -73,7 +71,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       
       if (!data.session) {
-        console.log('No active session');
         setUser(null);
         setSession(null);
         setProfile(null);
@@ -91,7 +88,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           if (refreshError) {
             console.error('Token refresh failed:', refreshError);
-            // Force re-login
             await supabase.auth.signOut();
             return null;
           }
@@ -99,7 +95,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (refreshData.session) {
             setSession(refreshData.session);
             setUser(refreshData.session.user);
-            console.log('Token refreshed successfully');
             return refreshData.session;
           }
         }
@@ -118,9 +113,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     let isMounted = true;
-    let refreshInterval: NodeJS.Timeout;
+    let refreshInterval: ReturnType<typeof setInterval>;
 
-    // Initial session load
     const initSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -167,7 +161,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             break;
 
           case 'TOKEN_REFRESHED':
-            console.log('Token refreshed via auth listener');
             setSession(newSession);
             setUser(newSession?.user ?? null);
             break;
@@ -181,7 +174,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             break;
 
           default:
-            // Handle other events
             if (newSession) {
               setSession(newSession);
               setUser(newSession.user);
@@ -201,9 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Refresh on window focus
     const handleFocus = () => {
-      if (isMounted) {
-        refreshSession();
-      }
+      if (isMounted) refreshSession();
     };
     window.addEventListener('focus', handleFocus);
 
@@ -217,10 +207,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Refresh on online
     const handleOnline = () => {
-      if (isMounted) {
-        console.log('Back online, refreshing session...');
-        refreshSession();
-      }
+      if (isMounted) refreshSession();
     };
     window.addEventListener('online', handleOnline);
 
@@ -241,14 +228,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) throw error;
 
-      // Check if user is active
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('is_active')
@@ -273,12 +256,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setSession(null);
-      setProfile(null);
     } catch (err) {
       console.error('Sign out error:', err);
-      // Force clear even on error
+    } finally {
       setUser(null);
       setSession(null);
       setProfile(null);
