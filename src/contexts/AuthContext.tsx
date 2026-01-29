@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isAdmin = profile?.role === 'admin';
 
-  // Fetch profile
+  // Fetch user profile by ID (RLS-safe)
   const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -33,17 +33,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile fetch error:', error);
+        setProfile(null);
+        return;
+      }
+
       setProfile(data);
 
-      // Update last_login silently
+      // Update last_login silently (fire and forget)
       supabase
         .from('user_profiles')
         .update({ last_login: new Date().toISOString() })
-        .eq('id', userId);
+        .eq('id', userId)
+        .then(() => {});
 
     } catch (err) {
-      console.error('Error fetching profile:', err);
+      console.error('Unexpected profile error:', err);
       setProfile(null);
     }
   }, []);
@@ -54,30 +60,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [user, fetchProfile]);
 
-  // JEDNODUCHÝ AUTH LISTENER - nechej Supabase handle refresh
+  // Initialize auth on mount
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
-    // 1. Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession?.user) {
+          await fetchProfile(initialSession.user.id);
+        }
+      } catch (error) {
+        console.error('Auth init error:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      
-      setIsLoading(false);
-    });
+    };
 
-    // 2. Listen for auth changes (Supabase handles token refresh automatically)
+    // Listen for auth changes (Supabase handles token refresh automatically)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        if (!isMounted) return;
-
-        console.log('Auth event:', event);
+        if (!mounted) return;
 
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -92,25 +103,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
-    // Cleanup
+    initializeAuth();
+
     return () => {
-      isMounted = false;
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [fetchProfile]);
 
-  // Sign in
+  // Sign in with email and password
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) throw error;
+      if (!data.user) throw new Error('No user returned after login');
 
-      const { data: profileData } = await supabase
+      // Check if user is active (using ID, not email - RLS safe)
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('is_active')
-        .eq('email', email)
+        .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        console.warn('Profile check failed:', profileError);
+      }
 
       if (profileData && !profileData.is_active) {
         await supabase.auth.signOut();
@@ -125,15 +143,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Sign out
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error('Sign out error:', err);
-    } finally {
-      setUser(null);
-      setSession(null);
-      setProfile(null);
-    }
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    await supabase.auth.signOut();
   }, []);
 
   return (
@@ -156,8 +169,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
