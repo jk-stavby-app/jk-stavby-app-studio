@@ -32,16 +32,16 @@ const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="flex flex-col items-center gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD]" />
-      <p className="text-base font-medium text-[#475569]">Načítání...</p>
+      <p className="text-base font-medium text-[#64748B]">Načítání...</p>
     </div>
   </div>
 );
 
 const FullPageLoader: React.FC<{ message?: string }> = ({ message = 'Načítání...' }) => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8]">
+  <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
     <div className="flex flex-col items-center gap-4">
       <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD]" />
-      <p className="text-lg font-medium text-[#475569]">{message}</p>
+      <p className="text-lg font-medium text-[#64748B]">{message}</p>
     </div>
   </div>
 );
@@ -54,11 +54,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const title = pageTitles[pathWithoutParams] || 'JK Stavby';
 
   return (
-    <div className="min-h-screen bg-[#F4F6F8]">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <Sidebar onLogout={signOut} />
-      <div className="md:ml-[240px] flex flex-col min-h-screen">
+      {/* md:ml-[15rem] matches sidebar width */}
+      <div className="md:ml-[15rem] flex flex-col min-h-screen">
         <Header title={title} />
-        <main className="flex-1 p-4 md:p-8 pb-24 md:pb-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>
