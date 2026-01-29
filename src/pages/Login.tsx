@@ -7,8 +7,8 @@ import { useToast } from '../components/Toast';
 const Login: React.FC = () => {
   const { signIn } = useAuth();
   const { showToast, ToastComponent } = useToast();
-  const [email, setEmail] = useState('marek.janota@jkstavby.cz');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('kulhanek@spol-jk.cz');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const Login: React.FC = () => {
           {/* Top accent bar */}
           <div className="h-2 bg-[#5B9AAD]" />
           
-          <div className="p-8 md:p-12 space-y-10">
+          <div className="p-8 md:p-12 space-y-8">
             {/* Logo area - centered */}
             <div className="flex flex-col items-center justify-center gap-4">
               <div className="flex items-center gap-3">
@@ -51,11 +51,10 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            {/* Welcome Title */}
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-[#0F172A] mb-2 tracking-tight">Vítejte zpět</h2>
-              <p className="text-base text-[#475569] font-medium leading-relaxed">Správa projektů a financí JK Stavby</p>
-            </div>
+            {/* Subtitle - left aligned */}
+            <p className="text-base text-[#475569] font-medium leading-relaxed text-left">
+              Správa projektů a financí JK Stavby
+            </p>
 
             {/* Form Fields */}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -72,7 +71,7 @@ const Login: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-12 pr-4 py-4 min-h-[56px] bg-[#FAFBFC] border border-[#E2E5E9] rounded-2xl text-lg text-[#0F172A] placeholder-[#5C6878] focus:outline-none focus:border-[#5B9AAD] transition-all font-semibold"
-                    placeholder="marek.janota@jkstavby.cz"
+                    placeholder="vas@email.cz"
                     required
                   />
                 </div>
