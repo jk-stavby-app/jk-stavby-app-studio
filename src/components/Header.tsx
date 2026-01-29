@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
@@ -13,7 +13,6 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -32,28 +31,31 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#FAFBFC]/95 backdrop-blur-sm border-b border-[#E2E5E9]">
-      <div className="flex items-center justify-between h-16 md:h-20 px-4 md:px-8">
-        {/* Page Title */}
-        <h1 className="text-xl md:text-2xl font-bold text-[#0F172A] tracking-tight">
+    <header className="sticky top-0 z-30 bg-white border-b border-[#E2E8F0]">
+      <div className="flex items-center justify-between h-[4.5rem] px-4 md:px-8">
+        {/* Page Title - fluid typography */}
+        <h1 
+          className="font-bold text-[#0F172A] tracking-tight"
+          style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}
+        >
           {title}
         </h1>
 
         {/* Right Section */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Notifications - placeholder for future */}
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Notifications */}
           <button 
-            className="relative p-2 md:p-3 min-w-[44px] min-h-[44px] rounded-xl text-[#475569] hover:bg-[#F4F6F8] hover:text-[#0F172A] transition-colors flex items-center justify-center"
+            className="p-2.5 md:p-3 rounded-xl text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
             aria-label="Oznámení"
           >
-            <Bell size={20} />
+            <Bell size={20} strokeWidth={2} />
           </button>
 
           {/* User Menu */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 md:gap-3 p-2 md:p-3 min-h-[44px] rounded-xl hover:bg-[#F4F6F8] transition-colors"
+              className="flex items-center gap-2 md:gap-3 p-2 md:pl-3 md:pr-2 rounded-xl hover:bg-[#F1F5F9] transition-colors"
               aria-expanded={showUserMenu}
               aria-haspopup="true"
             >
@@ -61,51 +63,50 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                 <p className="text-sm font-semibold text-[#0F172A] leading-tight">
                   {profile?.full_name || 'Uživatel'}
                 </p>
-                <p className="text-xs text-[#475569] leading-tight">
+                <p className="text-xs text-[#64748B] leading-tight">
                   {profile?.role === 'admin' ? 'Administrátor' : 'Uživatel'}
                 </p>
               </div>
-              <div className="w-9 h-9 md:w-10 md:h-10 bg-[#5B9AAD] rounded-xl flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#5B9AAD] to-[#4A8A9D] rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shadow-[#5B9AAD]/20">
                 {profile?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
               </div>
               <ChevronDown 
-                size={16} 
-                className={`hidden md:block text-[#475569] transition-transform ${showUserMenu ? 'rotate-180' : ''}`} 
+                size={18} 
+                className={`hidden md:block text-[#64748B] transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} 
               />
             </button>
 
             {/* Dropdown Menu */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#FAFBFC] rounded-xl border border-[#E2E5E9] shadow-lg overflow-hidden z-50">
-                {/* User Info */}
-                <div className="px-4 py-3 border-b border-[#E2E5E9] md:hidden">
+              <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl border border-[#E2E8F0] shadow-xl shadow-black/5 overflow-hidden z-50">
+                {/* User Info - Mobile */}
+                <div className="px-4 py-4 border-b border-[#F1F5F9] md:hidden bg-[#FAFBFC]">
                   <p className="text-sm font-semibold text-[#0F172A]">
                     {profile?.full_name || 'Uživatel'}
                   </p>
-                  <p className="text-xs text-[#475569]">
+                  <p className="text-xs text-[#64748B] mt-0.5">
                     {profile?.email}
                   </p>
                 </div>
 
-                {/* Menu Items */}
                 <div className="py-2">
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
                       navigate('/settings');
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#0F172A] hover:bg-[#F4F6F8] transition-colors min-h-[44px]"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#0F172A] hover:bg-[#F1F5F9] transition-colors"
                   >
-                    <Settings size={18} className="text-[#475569]" />
-                    Nastavení
+                    <Settings size={18} className="text-[#64748B]" />
+                    <span className="font-medium">Nastavení</span>
                   </button>
                   
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#DC2626] hover:bg-[#FEF2F2] transition-colors min-h-[44px]"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors"
                   >
                     <LogOut size={18} />
-                    Odhlásit se
+                    <span className="font-medium">Odhlásit se</span>
                   </button>
                 </div>
               </div>
