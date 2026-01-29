@@ -15,15 +15,15 @@ const SidebarItem: React.FC<{
     <NavLink
       to={to}
       className={({ isActive }) => `
-        flex items-center gap-3 px-4 py-3 mx-3 rounded-xl transition-all duration-200 group
+        flex items-center gap-3 px-3.5 py-2.5 mx-3 rounded-xl transition-all duration-200
         ${isActive 
-          ? 'bg-[#5B9AAD] text-white shadow-md shadow-[#5B9AAD]/20' 
+          ? 'bg-[#5B9AAD] text-white shadow-sm' 
           : 'text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
         }
       `}
     >
-      <Icon size={20} className="shrink-0" aria-hidden="true" />
-      <span className="font-medium whitespace-nowrap">{label}</span>
+      <Icon size={18} className="shrink-0" aria-hidden="true" />
+      <span className="text-sm font-medium">{label}</span>
     </NavLink>
   </li>
 );
@@ -44,18 +44,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
       role="navigation" 
       aria-label="Hlavní navigace"
     >
-      {/* Logo Section - height matches header */}
-      <div className="h-[4.5rem] px-6 flex items-center border-b border-[#F1F5F9]">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#5B9AAD] to-[#4A8A9D] rounded-xl flex items-center justify-center shadow-lg shadow-[#5B9AAD]/20">
-            <span className="text-white font-bold text-sm">JK</span>
+      {/* Logo Section */}
+      <div className="h-[4.5rem] px-5 flex items-center border-b border-[#F1F5F9]">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-[#5B9AAD] to-[#4A8A9D] rounded-lg flex items-center justify-center shadow-sm">
+            <span className="text-white font-semibold text-sm">JK</span>
           </div>
-          <span className="text-xl font-bold text-[#0F172A] tracking-tight">JK Stavby</span>
+          <span className="text-lg font-semibold text-[#0F172A]">JK Stavby</span>
         </Link>
       </div>
 
       {/* Navigation Items */}
-      <ul className="flex-1 py-6 space-y-1 overflow-y-auto">
+      <ul className="flex-1 py-5 space-y-0.5 overflow-y-auto">
         <SidebarItem to="/" icon={Home} label="Přehled" />
         <SidebarItem to="/projects" icon={Folder} label="Projekty" />
         <SidebarItem to="/invoices" icon={FileText} label="Faktury" />
@@ -64,15 +64,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
       </ul>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-[#F1F5F9] space-y-1">
+      <div className="p-3 border-t border-[#F1F5F9] space-y-0.5">
         <SidebarItem to="/settings" icon={Settings} label="Nastavení" />
         <button
           onClick={handleLogoutClick}
-          className="w-full flex items-center gap-3 px-4 py-3 mx-3 rounded-xl text-[#EF4444] hover:bg-[#FEF2F2] transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 mx-3 rounded-xl text-[#DC2626] hover:bg-[#FEF2F2] transition-all duration-200"
           style={{ width: 'calc(100% - 1.5rem)' }}
         >
-          <LogOut size={20} className="shrink-0" aria-hidden="true" />
-          <span className="font-medium">Odhlásit se</span>
+          <LogOut size={18} className="shrink-0" aria-hidden="true" />
+          <span className="text-sm font-medium">Odhlásit se</span>
         </button>
       </div>
     </nav>
