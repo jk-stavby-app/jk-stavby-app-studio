@@ -34,12 +34,12 @@ export const searchProjects = (term: string, limit: number = 5) =>
   supabase
     .from('project_dashboard')
     .select('id, name, code')
-    .or(`name.ilike.%${term}%,code.ilike.%${term}%`)
+    .or('name.ilike.%' + term + '%,code.ilike.%' + term + '%')
     .limit(limit)
 
 export const searchInvoices = (term: string, limit: number = 5) =>
   supabase
     .from('project_invoices')
     .select('id, invoice_number, supplier_name, project_name')
-    .or(`invoice_number.ilike.%${term}%,supplier_name.ilike.%${term}%`)
+    .or('invoice_number.ilike.%' + term + '%,supplier_name.ilike.%' + term + '%')
     .limit(limit)
