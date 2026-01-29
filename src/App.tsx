@@ -1,12 +1,15 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 
+// Components
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 
+// Lazy loaded pages
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -83,6 +86,71 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const App: React.FC = () => {
   const { user, isLoading } = useAuth();
+
+  // Session refresh function
+  const refreshSession = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error || !data.session) {
+        return;
+      }
+      
+      // Refresh if token expires within 5 minutes
+      const expiresAt = data.session.expires_at;
+      if (expiresAt) {
+        const expiresIn = expiresAt - Math.floor(Date.now() / 1000);
+        if (expiresIn < 300) {
+          await supabase.auth.refreshSession();
+        }
+      }
+    } catch (err) {
+      console.error('Session refresh failed:', err);
+    }
+  }, []);
+
+  // Session keep-alive & auth listener
+  useEffect(() => {
+    // Auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event) => {
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
+        }
+      }
+    );
+
+    // Initial check
+    refreshSession();
+
+    // Refresh every 4 minutes
+    const interval = setInterval(refreshSession, 4 * 60 * 1000);
+
+    // Refresh on window focus
+    const handleFocus = () => refreshSession();
+    window.addEventListener('focus', handleFocus);
+
+    // Refresh when back online
+    const handleOnline = () => refreshSession();
+    window.addEventListener('online', handleOnline);
+
+    // Refresh when tab becomes visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Cleanup
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [refreshSession]);
 
   if (isLoading) {
     return <FullPageLoader message="Načítání aplikace..." />;
