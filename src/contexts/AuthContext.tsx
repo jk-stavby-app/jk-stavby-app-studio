@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
@@ -21,10 +21,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const profileFetchedRef = useRef(false);
 
   const isAdmin = profile?.role === 'admin';
 
   const fetchProfile = useCallback(async (userId: string) => {
+    if (profileFetchedRef.current) return;
+    profileFetchedRef.current = true;
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -37,11 +41,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (err) {
       console.error('Profile error:', err);
+      profileFetchedRef.current = false;
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user) await fetchProfile(user.id);
+    if (user) {
+      profileFetchedRef.current = false;
+      await fetchProfile(user.id);
+    }
   }, [user, fetchProfile]);
 
   useEffect(() => {
@@ -61,11 +69,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       console.log('AUTH: State change', event);
+      if (event === 'INITIAL_SESSION') return;
+      
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchProfile(s.user.id);
-      else setProfile(null);
-      setIsLoading(false);
+      
+      if (event === 'SIGNED_IN' && s?.user) {
+        profileFetchedRef.current = false;
+        fetchProfile(s.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null);
+        profileFetchedRef.current = false;
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -81,6 +96,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setSession(null);
     setProfile(null);
+    profileFetchedRef.current = false;
     await supabase.auth.signOut();
   }, []);
 
