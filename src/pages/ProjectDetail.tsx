@@ -52,9 +52,7 @@ const ProjectDetail: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  useEffect(() => { fetchData(); }, [id]);
 
   const handleSaveBudget = async () => {
     if (!project || !profile) return;
@@ -99,41 +97,78 @@ const ProjectDetail: React.FC = () => {
     });
   }, [invoices]);
 
-  if (loading || !project) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#5B9AAD]" size={40} /></div>;
+  if (loading || !project) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="animate-spin text-[#5B9AAD]" size={36} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-16">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-sm font-bold text-[#5C6878] uppercase tracking-wider">
-        <Link to="/" className="hover:text-[#5B9AAD] flex items-center gap-1.5 transition-colors"><Home size={14} /> Přehled</Link>
-        <ChevronRight size={10} className="text-[#CDD1D6]" />
-        <Link to="/projects" className="hover:text-[#5B9AAD] transition-colors">Projekty</Link>
-        <ChevronRight size={10} className="text-[#CDD1D6]" />
-        <span className="text-[#0F172A] truncate max-w-[200px]">{project.name}</span>
+    <div className="space-y-6 animate-in pb-12">
+      {/* Breadcrumbs - FIXED: consistent styling, no uppercase, proper truncate */}
+      <nav 
+        className="flex items-center gap-2 text-sm text-[#64748B]"
+        aria-label="Breadcrumb"
+      >
+        <Link 
+          to="/" 
+          className="flex items-center gap-1.5 hover:text-[#5B9AAD] transition-colors"
+        >
+          <Home size={14} aria-hidden="true" />
+          <span>Přehled</span>
+        </Link>
+        <ChevronRight size={14} className="text-[#CBD5E1]" aria-hidden="true" />
+        <Link 
+          to="/projects" 
+          className="hover:text-[#5B9AAD] transition-colors"
+        >
+          Projekty
+        </Link>
+        <ChevronRight size={14} className="text-[#CBD5E1]" aria-hidden="true" />
+        <span 
+          className="text-[#0F172A] font-medium truncate max-w-[200px] sm:max-w-[300px]"
+          title={project.name}
+        >
+          {project.name}
+        </span>
       </nav>
 
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-[#E2E5E9]">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-             <span className="px-3 py-1 bg-[#F4F6F8] border border-[#E2E5E9] rounded-xl text-sm font-bold text-[#475569] uppercase tracking-widest">
-               {project.code}
-             </span>
-             <span className={`px-3 py-1 rounded-xl text-sm font-bold uppercase tracking-widest ${
-              project.status === 'active' ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#475569]'
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 pb-5 border-b border-[#E2E8F0]">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-lg text-xs font-semibold text-[#64748B]">
+              {project.code}
+            </span>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+              project.status === 'active' ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F1F5F9] text-[#64748B]'
             }`}>
-              {project.status === 'active' ? '● Ve výstavbě' : project.status === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
+              <span className={`w-1.5 h-1.5 rounded-full ${project.status === 'active' ? 'bg-[#059669]' : 'bg-[#64748B]'}`}></span>
+              {project.status === 'active' ? 'Ve výstavbě' : project.status === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
             </span>
           </div>
-          <h1 className="text-4xl font-bold text-[#0F172A] tracking-tight">{project.name}</h1>
-          <div className="flex items-center gap-4 text-sm font-medium text-[#475569]">
-            <span className="flex items-center gap-1.5"><MapPin size={16} className="text-[#5B9AAD]" /> Lokalita neuvedena</span>
-            <span className="flex items-center gap-1.5"><Calendar size={16} className="text-[#5B9AAD]" /> Zahájeno 2024</span>
+          <h1 
+            className="font-bold text-[#0F172A] tracking-tight"
+            style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}
+          >
+            {project.name}
+          </h1>
+          <div className="flex items-center gap-4 text-sm text-[#64748B] flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <MapPin size={14} className="text-[#5B9AAD]" aria-hidden="true" />
+              Lokalita neuvedena
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-[#5B9AAD]" aria-hidden="true" />
+              Zahájeno 2024
+            </span>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex p-1 bg-[#F4F6F8] rounded-2xl border border-[#E2E5E9] w-full md:w-auto">
+        <div className="flex p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] w-full lg:w-auto">
           <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Přehled" />
           <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={History} label="Audit Log" />
           <TabButton active={activeTab === 'documents'} onClick={() => setActiveTab('documents')} icon={FileText} label="Dokumentace" />
@@ -141,83 +176,152 @@ const ProjectDetail: React.FC = () => {
       </div>
 
       {activeTab === 'overview' && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className={`bg-[#FAFBFC] rounded-3xl p-6 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-8 ring-[#5B9AAD]/5' : 'border-[#E2E5E9]'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-[#475569] uppercase tracking-widest">Smluvní Rozpočet</span>
+        <div className="space-y-6 animate-in">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Budget Card with Edit */}
+            <div className={`bg-white rounded-2xl p-5 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-4 ring-[#5B9AAD]/10' : 'border-[#E2E8F0]'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-[#64748B]">Smluvní rozpočet</span>
                 <div className="flex items-center gap-1">
                   {isAdmin && !isEditingBudget && (
-                    <button onClick={() => setIsEditingBudget(true)} className="p-2 text-[#5B9AAD] hover:bg-[#E1EFF3] rounded-xl transition-all"><Pencil size={18} /></button>
+                    <button 
+                      onClick={() => setIsEditingBudget(true)} 
+                      className="p-1.5 text-[#5B9AAD] hover:bg-[#F0F9FF] rounded-lg transition-colors"
+                      aria-label="Upravit rozpočet"
+                    >
+                      <Pencil size={16} />
+                    </button>
                   )}
-                  <div className="w-10 h-10 bg-[#F0F7F9] rounded-2xl flex items-center justify-center text-[#5B9AAD]"><Wallet size={20} /></div>
+                  <div className="w-9 h-9 bg-[#F0F9FF] rounded-xl flex items-center justify-center text-[#5B9AAD]">
+                    <Wallet size={18} />
+                  </div>
                 </div>
               </div>
 
               {isEditingBudget && isAdmin ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <input
                     type="number"
                     value={budgetValue}
                     onChange={(e) => setBudgetValue(Number(e.target.value))}
-                    className="w-full px-4 py-3 bg-white border border-[#E2E5E9] rounded-2xl text-lg text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all font-bold"
+                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-base text-[#0F172A] font-semibold focus:outline-none focus:border-[#5B9AAD] transition-all"
+                    aria-label="Nová hodnota rozpočtu"
                   />
                   <textarea
                     value={budgetReason}
                     onChange={(e) => setBudgetReason(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-[#E2E5E9] rounded-2xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all min-h-[80px]"
+                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all min-h-[70px] resize-none"
                     placeholder="Důvod úpravy rozpočtu..."
+                    aria-label="Důvod změny"
                   />
                   <div className="flex gap-2">
-                    <button onClick={() => { setIsEditingBudget(false); setBudgetValue(project.planned_budget); setBudgetReason(''); }} className="flex-1 py-2.5 bg-[#FAFBFC] border border-[#E2E5E9] text-[#0F172A] rounded-xl text-xs font-bold uppercase tracking-widest">Zrušit</button>
-                    <button onClick={handleSaveBudget} disabled={isSavingBudget} className="flex-1 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">{isSavingBudget ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Uložit</button>
+                    <button 
+                      onClick={() => { setIsEditingBudget(false); setBudgetValue(project.planned_budget); setBudgetReason(''); }} 
+                      className="flex-1 py-2 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-xs font-medium hover:bg-[#F8FAFC]"
+                    >
+                      Zrušit
+                    </button>
+                    <button 
+                      onClick={handleSaveBudget} 
+                      disabled={isSavingBudget} 
+                      className="flex-1 py-2 bg-[#5B9AAD] text-white rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#4A8A9D]"
+                    >
+                      {isSavingBudget ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      Uložit
+                    </button>
                   </div>
                 </div>
               ) : (
                 <div>
-                   <h3 className="text-2xl font-bold tracking-tight text-[#0F172A] mb-1">{formatCurrency(project.planned_budget)}</h3>
-                   <p className="text-xs font-bold text-[#5B9AAD] uppercase tracking-wider flex items-center gap-1"><ShieldCheck size={12} /> Schváleno investorem</p>
+                  <h3 className="text-xl font-bold tracking-tight text-[#0F172A] mb-1 tabular-nums">
+                    {formatCurrency(project.planned_budget)}
+                  </h3>
+                  <p className="text-xs text-[#5B9AAD] font-medium flex items-center gap-1">
+                    <ShieldCheck size={12} aria-hidden="true" />
+                    Schváleno investorem
+                  </p>
                 </div>
               )}
             </div>
 
             <StatCard label="Čerpání k dnešku" value={formatCurrency(project.total_costs)} icon={TrendingUp} />
-            <StatCard label="Zůstatek financí" value={formatCurrency(project.planned_budget - project.total_costs)} icon={FileCheck} subValue={`${((project.planned_budget - project.total_costs) / project.planned_budget * 100).toFixed(1)}% zbývá`} />
-            <StatCard label="Efektivita nákladů" value={`${project.budget_usage_percent.toFixed(1)}%`} icon={TrendingUp} isWarning={project.budget_usage_percent > 90} />
+            <StatCard 
+              label="Zůstatek financí" 
+              value={formatCurrency(project.planned_budget - project.total_costs)} 
+              icon={FileCheck} 
+              subValue={project.planned_budget > 0 ? `${((project.planned_budget - project.total_costs) / project.planned_budget * 100).toFixed(1)}% zbývá` : undefined} 
+            />
+            <StatCard 
+              label="Efektivita nákladů" 
+              value={`${project.budget_usage_percent.toFixed(1)}%`} 
+              icon={TrendingUp} 
+              isWarning={project.budget_usage_percent > 90} 
+            />
           </div>
 
-          <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9]">
-            <div className="flex items-center justify-between mb-10">
-              <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Finanční progres stavby</h3>
+          {/* Chart */}
+          <div className="bg-white rounded-2xl p-5 md:p-6 border border-[#E2E8F0]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+              <h3 className="text-base font-semibold text-[#0F172A]">Finanční progres stavby</h3>
               <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
-                    <span className="text-xs font-bold text-[#475569] uppercase">Skutečnost</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#DC2626]" />
-                    <span className="text-xs font-bold text-[#475569] uppercase">Limit</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#5B9AAD]" />
+                  <span className="text-xs text-[#64748B]">Skutečnost</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
+                  <span className="text-xs text-[#64748B]">Limit</span>
+                </div>
               </div>
             </div>
-            <div className="h-[400px]">
+            <div className="h-[300px] md:h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
+                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.2}/>
                       <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E5E9" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748B', fontSize: 11 }} 
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748B', fontSize: 11 }} 
+                    tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} 
+                  />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '24px', border: '1px solid #E2E5E9', backgroundColor: '#FAFBFC', fontSize: '14px', fontWeight: 'bold' }} 
+                    contentStyle={{ 
+                      borderRadius: '12px', 
+                      border: '1px solid #E2E8F0', 
+                      backgroundColor: 'white', 
+                      fontSize: '13px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                    }} 
                     formatter={(val: number) => [formatCurrency(val), 'Náklady']}
                   />
-                  <ReferenceLine y={project.planned_budget} stroke="#DC2626" strokeDasharray="8 6" strokeWidth={2} label={{ value: 'MAX LIMIT', position: 'insideTopRight', fill: '#DC2626', fontSize: 10, fontWeight: '900' }} />
-                  <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" animationDuration={1500} />
+                  <ReferenceLine 
+                    y={project.planned_budget} 
+                    stroke="#DC2626" 
+                    strokeDasharray="6 4" 
+                    strokeWidth={2}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="total" 
+                    stroke="#5B9AAD" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#colorTotal)" 
+                    animationDuration={1000} 
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -226,21 +330,26 @@ const ProjectDetail: React.FC = () => {
       )}
 
       {activeTab === 'history' && (
-        <div className="bg-[#FAFBFC] rounded-3xl p-8 border border-[#E2E5E9] animate-in fade-in slide-in-from-bottom-4 duration-500">
-           <BudgetHistory projectId={id!} />
+        <div className="bg-white rounded-2xl p-5 md:p-6 border border-[#E2E8F0] animate-in">
+          <BudgetHistory projectId={id!} />
         </div>
       )}
 
       {activeTab === 'documents' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-           <DocumentCard title="Projektová dokumentace" count={12} lastUpdate="včera" icon={FileText} />
-           <DocumentCard title="Smlouvy a dodatky" count={4} lastUpdate="před 3 dny" icon={ShieldCheck} />
-           <DocumentCard title="Stavební deník (Digitální)" count={86} lastUpdate="dnes v 08:30" icon={Check} />
-           <div className="lg:col-span-3 py-16 text-center bg-[#F8F9FA] rounded-3xl border border-[#E2E5E9] border-dashed">
-              <p className="text-[#5C6878] font-bold uppercase tracking-widest text-sm mb-2">Správa souborů</p>
-              <p className="text-[#0F172A] font-medium mb-6">Modul pro nahrávání dokumentace bude dostupný ve verzi 2.1</p>
-              <button disabled className="px-8 py-3 bg-[#E2E5E9] text-[#5C6878] rounded-2xl text-xs font-bold uppercase tracking-widest cursor-not-allowed">Nahrát dokument</button>
-           </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in">
+          <DocumentCard title="Projektová dokumentace" count={12} lastUpdate="včera" icon={FileText} />
+          <DocumentCard title="Smlouvy a dodatky" count={4} lastUpdate="před 3 dny" icon={ShieldCheck} />
+          <DocumentCard title="Stavební deník (Digitální)" count={86} lastUpdate="dnes v 08:30" icon={Check} />
+          <div className="lg:col-span-3 py-12 text-center bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] border-dashed">
+            <p className="text-xs font-medium text-[#64748B] uppercase tracking-wider mb-1">Správa souborů</p>
+            <p className="text-sm text-[#0F172A] mb-5">Modul pro nahrávání dokumentace bude dostupný ve verzi 2.1</p>
+            <button 
+              disabled 
+              className="px-5 py-2.5 bg-[#E2E8F0] text-[#94A3B8] rounded-xl text-sm font-medium cursor-not-allowed"
+            >
+              Nahrát dokument
+            </button>
+          </div>
         </div>
       )}
 
@@ -252,41 +361,41 @@ const ProjectDetail: React.FC = () => {
 const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ElementType; label: string }> = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all uppercase tracking-widest ${
-      active ? 'bg-[#5B9AAD] text-white' : 'text-[#475569] hover:bg-[#E2E5E9]/50'
+    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 lg:flex-none ${
+      active ? 'bg-[#5B9AAD] text-white' : 'text-[#64748B] hover:bg-[#E2E8F0]/50'
     }`}
   >
-    <Icon size={16} />
+    <Icon size={16} aria-hidden="true" />
     <span className="hidden sm:inline">{label}</span>
   </button>
 );
 
 const StatCard: React.FC<{ label: string; value: string; icon: React.ElementType; isWarning?: boolean; subValue?: string }> = ({ label, value, icon: Icon, isWarning, subValue }) => (
-  <div className={`bg-[#FAFBFC] rounded-3xl p-6 border transition-all ${isWarning ? 'border-[#DC2626] bg-[#FEF2F2]/30' : 'border-[#E2E5E9]'}`}>
-    <div className="flex items-center justify-between mb-4">
-      <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isWarning ? 'text-[#DC2626]' : 'text-[#475569]'}`}>{label}</span>
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F7F9] text-[#5B9AAD]'}`}>
-        <Icon size={18} />
+  <div className={`bg-white rounded-2xl p-5 border transition-all ${isWarning ? 'border-[#FECACA] bg-[#FEF2F2]' : 'border-[#E2E8F0]'}`}>
+    <div className="flex items-center justify-between mb-3">
+      <span className={`text-xs font-medium ${isWarning ? 'text-[#DC2626]' : 'text-[#64748B]'}`}>{label}</span>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F9FF] text-[#5B9AAD]'}`}>
+        <Icon size={18} aria-hidden="true" />
       </div>
     </div>
-    <div className="space-y-1">
-      <h3 className={`text-2xl font-bold tracking-tight ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
-      {subValue && <p className="text-[10px] font-bold text-[#5C6878] uppercase tracking-wider">{subValue}</p>}
+    <div className="space-y-0.5">
+      <h3 className={`text-xl font-bold tracking-tight tabular-nums ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
+      {subValue && <p className="text-xs text-[#64748B]">{subValue}</p>}
     </div>
   </div>
 );
 
 const DocumentCard: React.FC<{ title: string; count: number; lastUpdate: string; icon: React.ElementType }> = ({ title, count, lastUpdate, icon: Icon }) => (
-  <div className="bg-[#FAFBFC] p-6 rounded-3xl border border-[#E2E5E9] hover:border-[#5B9AAD]/30 transition-all cursor-pointer group">
-     <div className="w-12 h-12 bg-[#F0F7F9] text-[#5B9AAD] rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[#5B9AAD] group-hover:text-white transition-all">
-        <Icon size={24} />
-     </div>
-     <h4 className="text-lg font-bold text-[#0F172A] mb-1">{title}</h4>
-     <p className="text-sm font-medium text-[#475569] mb-4">{count} dokumentů</p>
-     <div className="flex items-center justify-between pt-4 border-t border-[#E2E5E9] text-[10px] font-bold text-[#5C6878] uppercase tracking-widest">
-        <span>Poslední změna</span>
-        <span>{lastUpdate}</span>
-     </div>
+  <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer group">
+    <div className="w-10 h-10 bg-[#F0F9FF] text-[#5B9AAD] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#5B9AAD] group-hover:text-white transition-all">
+      <Icon size={20} aria-hidden="true" />
+    </div>
+    <h4 className="text-base font-semibold text-[#0F172A] mb-0.5">{title}</h4>
+    <p className="text-sm text-[#64748B] mb-4">{count} dokumentů</p>
+    <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+      <span>Poslední změna</span>
+      <span className="font-medium">{lastUpdate}</span>
+    </div>
   </div>
 );
 
