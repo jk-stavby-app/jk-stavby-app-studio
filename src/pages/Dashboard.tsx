@@ -8,7 +8,6 @@ import { COLORS, formatCurrency } from '../constants';
 import { supabase } from '../lib/supabase';
 import { Project, Invoice } from '../types';
 
-// Typ pro statistiky z dashboard_stats VIEW
 interface DashboardStats {
   total_projects: number;
   active_projects: number;
@@ -23,24 +22,28 @@ const StatCard: React.FC<{
   trend?: { val: string; pos: boolean }; 
   icon: React.ElementType;
 }> = ({ label, value, trend, icon: Icon }) => (
-  <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9] transition-all hover:border-[#CDD1D6] group">
-    <div className="flex items-center justify-between mb-4">
-      <span className="text-sm font-bold text-[#475569] uppercase tracking-wider">{label}</span>
-      <div className="w-12 h-12 bg-[#F0F7F9] rounded-2xl flex items-center justify-center text-[#5B9AAD] group-hover:bg-[#5B9AAD] group-hover:text-[#F8FAFC] transition-all duration-300">
-        <Icon size={24} aria-hidden="true" />
+  <div className="bg-white rounded-2xl p-4 md:p-6 border border-[#E2E8F0] transition-all duration-200 hover:shadow-lg hover:shadow-black/5 group">
+    <div className="flex items-center justify-between mb-3 md:mb-4">
+      <span className="fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">{label}</span>
+      <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] rounded-xl md:rounded-2xl flex items-center justify-center text-[#5B9AAD] group-hover:from-[#5B9AAD] group-hover:to-[#4A8A9D] group-hover:text-white transition-all duration-300">
+        <Icon className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2} aria-hidden="true" />
       </div>
     </div>
-    <div className="space-y-1">
-      <p className="text-3xl font-bold text-[#0F172A] tracking-tight">{value}</p>
+    <div className="space-y-1.5 md:space-y-2">
+      <p className="fluid-3xl font-bold text-[#0F172A] tracking-tight tabular-nums">
+        {value}
+      </p>
       {trend && (
-        <div className="flex items-center gap-1.5 pt-1">
-          <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-sm font-bold ${
-            trend.pos ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#FEF2F2] text-[#DC2626]'
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md fluid-xs font-semibold ${
+            trend.pos 
+              ? 'bg-[#ECFDF5] text-[#059669]' 
+              : 'bg-[#FEF2F2] text-[#DC2626]'
           }`}>
-            {trend.pos ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+            {trend.pos ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
             {trend.val}
           </span>
-          <span className="text-sm text-[#5C6878] font-medium">vs m. měsíc</span>
+          <span className="fluid-xs text-[#94A3B8]">vs m. měsíc</span>
         </div>
       )}
     </div>
@@ -59,27 +62,20 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
         
-        // Paralelní načítání - 3 rychlé queries místo 1 pomalého
-      const [statsResult, projectsResult, invoicesResult] = await Promise.all([
-  // 1. Statistiky z optimalizovaného VIEW (1 řádek)
-  supabase.from('dashboard_stats').select('*').single(),
-  
-  // 2. Top 5 projektů podle nákladů (LIMIT 5) - OPRAVENO: select('*')
-  supabase
-    .from('project_dashboard')
-    .select('*')
-    .order('total_costs', { ascending: false })
-    .limit(5),
-  
-  // 3. Posledních 5 faktur (LIMIT 5)
-  supabase
-    .from('project_invoices')
-    .select('*')
-    .not('project_id', 'is', null)
-    .order('date_issue', { ascending: false })
-    .limit(5)
-]);
-
+        const [statsResult, projectsResult, invoicesResult] = await Promise.all([
+          supabase.from('dashboard_stats').select('*').single(),
+          supabase
+            .from('project_dashboard')
+            .select('*')
+            .order('total_costs', { ascending: false })
+            .limit(5),
+          supabase
+            .from('project_invoices')
+            .select('*')
+            .not('project_id', 'is', null)
+            .order('date_issue', { ascending: false })
+            .limit(5)
+        ]);
 
         if (statsResult.data) {
           setStats(statsResult.data);
@@ -111,17 +107,17 @@ const Dashboard: React.FC = () => {
 
   const getStatusBadge = (status: Invoice['payment_status']) => {
     const styles = {
-      paid: 'bg-[#ECFDF5] text-[#059669] border-[#059669]/20',
-      pending: 'bg-[#FEF9EE] text-[#D97706] border-[#D97706]/20',
-      overdue: 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20',
+      paid: 'bg-[#ECFDF5] text-[#059669]',
+      pending: 'bg-[#FEF9EE] text-[#D97706]',
+      overdue: 'bg-[#FEF2F2] text-[#DC2626]',
     };
     const labels = {
       paid: 'Zaplaceno',
       pending: 'Čekající',
-      overdue: 'Neuhrazeno'
+      overdue: 'Po splatnosti'
     };
     return (
-      <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${styles[status]}`}>
+      <span className={`px-2 md:px-3 py-1 md:py-1.5 rounded-full fluid-xs font-semibold whitespace-nowrap ${styles[status]}`}>
         {labels[status]}
       </span>
     );
@@ -129,16 +125,17 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#475569]">
-        <Loader2 className="w-12 h-12 animate-spin mb-4 text-[#5B9AAD]" />
-        <p className="text-lg font-semibold tracking-tight">Načítání analytiky...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#64748B]">
+        <Loader2 className="w-10 h-10 md:w-12 md:h-12 animate-spin mb-4 text-[#5B9AAD]" />
+        <p className="fluid-lg font-medium">Načítání analytiky...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="space-y-4 md:space-y-6 animate-in">
+      {/* Stats Grid - 2 columns on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <StatCard 
           label="Celkový rozpočet" 
           value={formatCurrency(stats?.total_budget || 0)} 
@@ -164,22 +161,26 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E5E9] lg:col-span-1">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Top projekty</h3>
-            <span className="text-sm font-semibold text-[#5B9AAD] uppercase tracking-wider">Dle nákladů</span>
+      {/* Charts Section - stacked on mobile, side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        {/* Pie Chart */}
+        <div className="bg-white rounded-2xl p-4 md:p-6 border border-[#E2E8F0]">
+          <div className="flex items-center justify-between mb-4 md:mb-6">
+            <h3 className="fluid-lg font-bold text-[#0F172A]">Top projekty</h3>
+            <span className="fluid-xs font-semibold text-[#5B9AAD] uppercase tracking-wider">
+              Dle nákladů
+            </span>
           </div>
-          <div className="h-[300px]">
+          <div className="h-[16rem] md:h-[18rem]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={65}
-                  outerRadius={100}
-                  paddingAngle={8}
+                  innerRadius="50%"
+                  outerRadius="75%"
+                  paddingAngle={4}
                   dataKey="value"
                   stroke="none"
                 >
@@ -189,11 +190,12 @@ const Dashboard: React.FC = () => {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#FAFBFC', 
-                    border: '1px solid #E2E5E9', 
-                    borderRadius: '16px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
+                    backgroundColor: 'white', 
+                    border: '1px solid #E2E8F0', 
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    fontSize: '0.8125rem',
+                    fontWeight: '600',
                     color: '#0F172A',
                   }} 
                   formatter={(value: number) => formatCurrency(value)}
@@ -202,45 +204,61 @@ const Dashboard: React.FC = () => {
                   verticalAlign="bottom" 
                   align="center"
                   iconType="circle"
-                  formatter={(value) => <span className="text-sm font-bold text-[#475569] hover:text-[#0F172A] transition-colors">{value}</span>} 
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: '0.6875rem' }}
+                  formatter={(value) => (
+                    <span className="fluid-xs font-medium text-[#64748B]">
+                      {value.length > 18 ? `${value.substring(0, 18)}...` : value}
+                    </span>
+                  )} 
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-[#FAFBFC] rounded-2xl p-8 border border-[#E2E5E9] lg:col-span-2">
-          <div className="flex items-center justify-between mb-10">
-            <h3 className="text-xl font-bold text-[#0F172A] tracking-tight">Průběh čerpání u klíčových staveb</h3>
+        {/* Progress Bars - FIXED: stacked layout on mobile */}
+        <div className="bg-white rounded-2xl p-4 md:p-6 border border-[#E2E8F0] lg:col-span-2 overflow-hidden">
+          <div className="flex items-center justify-between mb-6 md:mb-8 gap-2">
+            <h3 className="fluid-lg font-bold text-[#0F172A] min-w-0">
+              Průběh čerpání u klíčových staveb
+            </h3>
             <button 
               onClick={() => navigate('/projects')}
-              className="text-sm font-bold text-[#5B9AAD] uppercase tracking-widest hover:text-[#4A8A9D] transition-colors"
+              className="fluid-xs font-semibold text-[#5B9AAD] uppercase tracking-wider hover:text-[#4A8A9D] transition-colors shrink-0"
             >
-              Zobrazit vše
+              Vše
             </button>
           </div>
-          <div className="space-y-8">
+          <div className="space-y-5 md:space-y-6">
             {chartData.map((item) => (
               <div 
                 key={item.id}
                 onClick={() => navigate(`/projects/${item.id}`)}
                 className="group cursor-pointer"
               >
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex flex-col">
-                    <span className="text-lg font-bold text-[#0F172A] group-hover:text-[#5B9AAD] transition-colors truncate max-w-[300px]">
-                      {item.name}
-                    </span>
-                    <span className="text-xs font-bold text-[#5C6878] uppercase tracking-wider">V projektu od 2024</span>
-                  </div>
-                  <span className="text-lg font-bold text-[#0F172A]">
-                    {formatCurrency(item.value)}
+                {/* MOBILE: Stacked layout - name above, value below */}
+                <div className="flex flex-col gap-1 mb-2">
+                  <span 
+                    className="fluid-sm font-semibold text-[#0F172A] group-hover:text-[#5B9AAD] transition-colors line-clamp-1"
+                    title={item.name}
+                  >
+                    {item.name}
                   </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="fluid-xs text-[#94A3B8] uppercase tracking-wider shrink-0">
+                      V projektu od 2024
+                    </span>
+                    <span className="fluid-sm font-bold text-[#0F172A] tabular-nums">
+                      {formatCurrency(item.value)}
+                    </span>
+                  </div>
                 </div>
-                <div className="relative w-full h-3 bg-[#E2E5E9] rounded-full overflow-hidden">
+                {/* Progress Bar */}
+                <div className="relative w-full h-2 md:h-2.5 bg-[#F1F5F9] rounded-full overflow-hidden">
                   <div 
-                    className="absolute inset-y-0 left-0 bg-[#5B9AAD] rounded-full transition-all duration-1000 ease-out group-hover:brightness-110"
-                    style={{ width: `${(item.value / maxVal) * 100}%` }}
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#5B9AAD] to-[#4A8A9D] rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${Math.min((item.value / maxVal) * 100, 100)}%` }}
                   />
                 </div>
               </div>
@@ -249,40 +267,60 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E5E9] overflow-hidden">
-        <div className="flex justify-between items-center p-8 border-b border-[#E2E5E9]">
+      {/* Recent Transactions */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-4 md:p-6 border-b border-[#F1F5F9]">
           <div>
-            <h2 className="text-xl font-bold text-[#0F172A] tracking-tight">Nedávné transakce</h2>
-            <p className="text-sm font-medium text-[#5C6878] mt-1">Posledních 5 zaúčtovaných faktur</p>
+            <h2 className="fluid-lg font-bold text-[#0F172A]">Nedávné transakce</h2>
+            <p className="fluid-xs text-[#94A3B8] mt-0.5">Posledních 5 zaúčtovaných faktur</p>
           </div>
           <button 
             onClick={() => navigate('/invoices')} 
-            className="px-6 py-2.5 bg-[#F8F9FA] border border-[#E2E5E9] text-sm font-bold text-[#0F172A] rounded-xl hover:bg-[#E2E5E9] transition-all uppercase tracking-widest"
+            className="px-4 py-2 md:px-5 md:py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] fluid-sm font-semibold text-[#0F172A] rounded-xl hover:bg-[#F1F5F9] hover:border-[#CBD5E1] transition-all w-full sm:w-auto text-center"
           >
             Všechny faktury
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[700px]">
+        
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-[#F1F5F9]">
+          {invoices.map((inv) => (
+            <div key={inv.id} className="p-4 hover:bg-[#FAFBFC] transition-colors">
+              <div className="flex justify-between items-start gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="fluid-sm font-semibold text-[#0F172A] truncate">{inv.invoice_number}</p>
+                  <p className="fluid-xs text-[#64748B] truncate">{inv.project_name}</p>
+                </div>
+                {getStatusBadge(inv.payment_status)}
+              </div>
+              <div className="flex justify-between items-center">
+                <p className="fluid-xs text-[#94A3B8] truncate flex-1">{inv.supplier_name}</p>
+                <p className="fluid-sm font-bold text-[#0F172A] ml-2 tabular-nums">{formatCurrency(inv.total_amount)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-[#F8F9FA] border-b border-[#E2E5E9]">
-                <th scope="col" className="px-8 py-5 text-xs font-bold text-[#475569] uppercase tracking-widest">Identifikátor</th>
-                <th scope="col" className="px-8 py-5 text-xs font-bold text-[#475569] uppercase tracking-widest">Položka / Projekt</th>
-                <th scope="col" className="px-8 py-5 text-xs font-bold text-[#475569] uppercase tracking-widest">Subdodavatel</th>
-                <th scope="col" className="px-8 py-5 text-right text-xs font-bold text-[#475569] uppercase tracking-widest">Finální částka</th>
-                <th scope="col" className="px-8 py-5 text-center text-xs font-bold text-[#475569] uppercase tracking-widest">Status</th>
+              <tr className="bg-[#FAFBFC]">
+                <th scope="col" className="px-6 py-4 fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">Identifikátor</th>
+                <th scope="col" className="px-6 py-4 fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">Položka / Projekt</th>
+                <th scope="col" className="px-6 py-4 fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">Subdodavatel</th>
+                <th scope="col" className="px-6 py-4 text-right fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">Finální částka</th>
+                <th scope="col" className="px-6 py-4 text-center fluid-xs font-semibold text-[#64748B] uppercase tracking-wider">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E2E5E9]">
+            <tbody className="divide-y divide-[#F1F5F9]">
               {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors border-b border-[#E2E5E9] group">
-                  <td className="px-8 py-5 text-base text-[#0F172A] font-bold">{inv.invoice_number}</td>
-                  <td className="px-8 py-5 text-base text-[#0F172A] font-medium">{inv.project_name}</td>
-                  <td className="px-8 py-5 text-base text-[#475569] font-medium">{inv.supplier_name}</td>
-                  <td className="px-8 py-5 text-base text-[#0F172A] text-right font-bold">{formatCurrency(inv.total_amount)}</td>
-                  <td className="px-8 py-5 text-center">
-                    {getStatusBadge(inv.payment_status)}
-                  </td>
+                <tr key={inv.id} className="hover:bg-[#FAFBFC] transition-colors">
+                  <td className="px-6 py-4 fluid-sm text-[#0F172A] font-semibold">{inv.invoice_number}</td>
+                  <td className="px-6 py-4 fluid-sm text-[#0F172A] font-medium">{inv.project_name}</td>
+                  <td className="px-6 py-4 fluid-sm text-[#64748B]">{inv.supplier_name}</td>
+                  <td className="px-6 py-4 fluid-sm text-[#0F172A] text-right font-semibold tabular-nums">{formatCurrency(inv.total_amount)}</td>
+                  <td className="px-6 py-4 text-center">{getStatusBadge(inv.payment_status)}</td>
                 </tr>
               ))}
             </tbody>
