@@ -45,38 +45,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    let initialized = false;
-
+    console.log('AUTH: Starting...');
+    
     supabase.auth.getSession().then(({ data: { session: s } }) => {
-      initialized = true;
+      console.log('AUTH: Got session', !!s);
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) fetchProfile(s.user.id);
       setIsLoading(false);
-    }).catch(() => {
-      initialized = true;
+      console.log('AUTH: Done loading');
+    }).catch(err => {
+      console.error('AUTH: Error', err);
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      // Skip INITIAL_SESSION - already handled by getSession above
-      if (!initialized || event === 'INITIAL_SESSION') return;
-
+      console.log('AUTH: State change', event);
       setSession(s);
       setUser(s?.user ?? null);
-
-      if (event === 'SIGNED_IN' && s?.user) {
-        fetchProfile(s.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setProfile(null);
-      }
+      if (s?.user) fetchProfile(s.user.id);
+      else setProfile(null);
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error };
     return { error: null };
   }, []);
