@@ -1,442 +1,300 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Loader2, X, FileText, Search as SearchIcon, Calendar, Filter, EyeOff } from 'lucide-react';
-import { formatCurrency } from '../constants';
-import { supabase, createProject } from '../lib/supabase';
+import { 
+  Folder, Search, Loader2, TrendingUp, ChevronRight, 
+  Calendar, DollarSign, BarChart3, Filter
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { Project } from '../types';
-import { useToast } from '../components/Toast';
+import { formatCurrency } from '../constants';
 
-const PROJECTS_PER_PAGE = 12;
-
-const ProjectCard: React.FC<{ project: Project }> = ({ project }) => {
-  const navigate = useNavigate();
-  
-  const getCardBg = (p: Project) => {
-    if (p.budget_usage_percent > 100) return 'bg-[#FEF2F2]';
-    if (p.budget_usage_percent >= 80) return 'bg-[#FEF9EE]';
-    if (p.status === 'completed') return 'bg-[#ECFDF5]';
-    return 'bg-white';
-  };
-
-  const getStatusBadge = (status: Project['status']) => {
-    const badgeStyles = {
-      active: 'bg-[#ECFDF5] text-[#059669]',
-      completed: 'bg-[#F1F5F9] text-[#64748B]',
-      on_hold: 'bg-[#FEF9EE] text-[#D97706]',
-    };
-    const labels = { active: 'aktivní', completed: 'dokončeno', on_hold: 'pozastaveno' };
-    
-    return (
-      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${badgeStyles[status]}`}>
-        {labels[status]}
-      </span>
-    );
+/**
+ * UNIFIED StatCard - 2026 Enterprise SaaS
+ */
+const ProjectStatCard: React.FC<{
+  label: string;
+  value: string;
+  subValue?: string;
+  icon: React.ElementType;
+  variant?: 'default' | 'success' | 'warning';
+}> = ({ label, value, subValue, icon: Icon, variant = 'default' }) => {
+  const iconStyles = {
+    default: 'bg-[#F0F9FF] text-[#5B9AAD]',
+    success: 'bg-emerald-50 text-emerald-600',
+    warning: 'bg-amber-50 text-amber-600',
   };
 
   return (
-    <div 
-      onClick={() => navigate(`/projects/${project.id}`)}
-      className={`rounded-2xl p-5 border border-[#E2E8F0] hover:border-[#CBD5E1] hover:shadow-md transition-all cursor-pointer flex flex-col group ${getCardBg(project)}`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-[#F1F5F9] rounded-md text-xs font-medium text-[#64748B]">
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${iconStyles[variant]}`}>
+          <Icon size={20} strokeWidth={2} />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <h4 className="text-[1.05rem] sm:text-[1.15rem] font-semibold text-[#334155] leading-tight">{label}</h4>
+        <p className="text-[1.1rem] sm:text-[1.2rem] font-bold text-[#0F172A] tabular-nums">{value}</p>
+        {subValue && (
+          <p className="text-xs font-semibold text-[#64748B] mt-1">{subValue}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * StatusBadge for projects
+ */
+const ProjectStatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const styles: Record<string, string> = {
+    active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    completed: 'bg-blue-50 text-blue-700 border-blue-200',
+    paused: 'bg-amber-50 text-amber-700 border-amber-200',
+  };
+  const labels: Record<string, string> = {
+    active: 'Ve výstavbě',
+    completed: 'Dokončeno',
+    paused: 'Pozastaveno',
+  };
+  const dotColors: Record<string, string> = {
+    active: 'bg-emerald-500',
+    completed: 'bg-blue-500',
+    paused: 'bg-amber-500',
+  };
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[status] || styles.active}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status] || dotColors.active}`} />
+      {labels[status] || 'Aktivní'}
+    </span>
+  );
+};
+
+/**
+ * BudgetProgressBar
+ */
+const BudgetProgressBar: React.FC<{ percent: number }> = ({ percent }) => {
+  const getColor = () => {
+    if (percent > 90) return 'bg-red-500';
+    if (percent > 70) return 'bg-amber-500';
+    return 'bg-[#5B9AAD]';
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold text-[#64748B]">Čerpání rozpočtu</span>
+        <span className={`text-xs font-bold ${percent > 90 ? 'text-red-600' : percent > 70 ? 'text-amber-600' : 'text-[#0F172A]'}`}>
+          {percent.toFixed(1)}%
+        </span>
+      </div>
+      <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all duration-500 ${getColor()}`}
+          style={{ width: `${Math.min(percent, 100)}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
+/**
+ * ProjectCard - Mobile & Grid view
+ */
+const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ project, onClick }) => (
+  <div 
+    onClick={onClick}
+    className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm hover:shadow-lg hover:border-[#5B9AAD]/30 transition-all cursor-pointer group"
+  >
+    {/* Header */}
+    <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="px-2 py-0.5 bg-[#F1F5F9] border border-[#E2E8F0] rounded-md text-xs font-bold text-[#64748B]">
             {project.code}
           </span>
-          {project.project_year && (
-            <span className="px-2 py-0.5 bg-[#E0F2FE] rounded-md text-xs font-medium text-[#0369A1]">
-              Rok {project.project_year}
-            </span>
-          )}
+          <ProjectStatusBadge status={project.status} />
         </div>
-        {getStatusBadge(project.status)}
+        <h3 className="text-base font-bold text-[#0F172A] group-hover:text-[#5B9AAD] transition-colors line-clamp-2">
+          {project.name}
+        </h3>
       </div>
+      <ChevronRight size={20} className="text-[#CBD5E1] group-hover:text-[#5B9AAD] transition-colors shrink-0 mt-1" />
+    </div>
 
-      {/* Title */}
-      <h3 className="text-base font-semibold text-[#0F172A] mb-4 line-clamp-2 group-hover:text-[#5B9AAD] transition-colors min-h-[3rem] leading-normal">
-        {project.name}
-      </h3>
-
-      {/* Progress */}
-      <div className="mb-4 space-y-1.5">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-[#64748B]">Čerpání rozpočtu</span>
-          <span className="text-sm font-medium text-[#0F172A] tabular-nums">
-            {project.budget_usage_percent.toFixed(1)}%
-          </span>
-        </div>
-        <div 
-          className="h-1.5 bg-[#E2E8F0] rounded-full overflow-hidden"
-          role="progressbar"
-          aria-valuenow={Math.min(project.budget_usage_percent, 100)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Čerpání rozpočtu ${project.budget_usage_percent.toFixed(1)}%`}
-        >
-          <div 
-            className={`h-full rounded-full transition-all duration-500 ${
-              project.budget_usage_percent > 100 ? 'bg-[#DC2626]' : 
-              project.budget_usage_percent >= 80 ? 'bg-[#D97706]' : 
-              'bg-[#10B981]'
-            }`}
-            style={{ width: `${Math.min(project.budget_usage_percent, 100)}%` }}
-          />
-        </div>
+    {/* Stats */}
+    <div className="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">Rozpočet</p>
+        <p className="text-sm font-bold text-[#0F172A] tabular-nums">{formatCurrency(project.planned_budget)}</p>
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E2E8F0]">
-        <div>
-          <p className="text-xs text-[#64748B] mb-0.5">Rozpočet</p>
-          <p className="text-sm font-semibold text-[#0F172A] tabular-nums">
-            {formatCurrency(project.planned_budget)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-[#64748B] mb-0.5">Vyčerpáno</p>
-          <p className={`text-sm font-semibold tabular-nums ${
-            project.budget_usage_percent > 100 ? 'text-[#DC2626]' : 'text-[#0F172A]'
-          }`}>
-            {formatCurrency(project.total_costs)}
-          </p>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center gap-1.5 mt-auto pt-3 border-t border-[#E2E8F0] text-xs text-[#64748B]">
-        <FileText size={14} aria-hidden="true" />
-        <span>{project.invoice_count} faktur celkem</span>
+      <div>
+        <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-1">Čerpáno</p>
+        <p className="text-sm font-bold text-[#5B9AAD] tabular-nums">{formatCurrency(project.total_costs)}</p>
       </div>
     </div>
-  );
-};
 
-const NewProjectModal: React.FC<{ onClose: () => void; onSave: () => void; showToast: any }> = ({ onClose, onSave, showToast }) => {
-  const [formData, setFormData] = useState({ name: '', code: '', planned_budget: 0, status: 'active' });
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { error } = await createProject(formData);
-      if (error) throw error;
-      showToast('Projekt vytvořen', 'success');
-      onSave();
-    } catch (err) {
-      showToast('Chyba při vytváření', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/20 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] w-full max-w-xl shadow-xl">
-        <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#E2E8F0]">
-          <h2 id="modal-title" className="text-lg font-semibold text-[#0F172A]">
-            Nový projekt
-          </h2>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
-            aria-label="Zavřít"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-1.5">
-            <label htmlFor="name" className="text-sm text-[#64748B] font-medium">
-              Název projektu
-            </label>
-            <input 
-              id="name" 
-              type="text"
-              required 
-              value={formData.name} 
-              onChange={e => setFormData({...formData, name: e.target.value})} 
-              className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 focus:bg-white transition-all" 
-              placeholder="Zadejte název"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label htmlFor="code" className="text-sm text-[#64748B] font-medium">
-                Kód projektu
-              </label>
-              <input 
-                id="code" 
-                type="text"
-                required 
-                value={formData.code} 
-                onChange={e => setFormData({...formData, code: e.target.value})} 
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 focus:bg-white transition-all" 
-                placeholder="Např. PRJ-001"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="budget" className="text-sm text-[#64748B] font-medium">
-                Plánovaný rozpočet (Kč)
-              </label>
-              <input 
-                id="budget" 
-                type="number" 
-                required 
-                value={formData.planned_budget} 
-                onChange={e => setFormData({...formData, planned_budget: Number(e.target.value)})} 
-                className="w-full px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 focus:bg-white transition-all" 
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-5 mt-5 border-t border-[#E2E8F0]">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="flex-1 py-2.5 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-sm font-medium hover:bg-[#F8FAFC] transition-colors"
-            >
-              Zrušit
-            </button>
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="flex-1 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium hover:bg-[#4A8A9D] transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : 'Vytvořit'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+    {/* Progress */}
+    <BudgetProgressBar percent={project.budget_usage_percent} />
+  </div>
+);
 
 const Projects: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [hideEmpty, setHideEmpty] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showNewModal, setShowNewModal] = useState(false);
-  const { showToast, ToastComponent } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
 
-  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('project_dashboard')
+          .select('*')
+          .order('total_costs', { ascending: false });
 
-  const fetchProjects = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('project_dashboard')
-        .select('*')
-        .order('last_invoice_date', { ascending: false, nullsFirst: false });
-      
-      if (error) throw error;
-      setProjects(data || []);
-    } catch (err) {
-      console.error('Error fetching projects:', err);
-      setProjects([]);
-    } finally {
-      setLoading(false);
+        if (error) throw error;
+        setProjects(data || []);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    fetchProjects();
+  }, []);
 
-  const years = useMemo(() => {
-    const y = projects.map(p => p.project_year).filter((y): y is number => y !== null);
-    return Array.from(new Set(y)).sort((a, b) => Number(b) - Number(a));
-  }, [projects]);
+  const filteredProjects = useMemo(() => {
+    return projects.filter(project => {
+      const matchesSearch = 
+        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.code.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [projects, searchTerm, statusFilter]);
 
-  const processedProjects = useMemo(() => {
-    return projects
-      .filter(p => !hideEmpty || p.total_costs > 0 || p.planned_budget > 0)
-      .filter(p => !selectedYear || p.project_year === selectedYear)
-      .filter(p => !statusFilter || p.status === statusFilter)
-      .filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.code.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-  }, [projects, searchTerm, hideEmpty, selectedYear, statusFilter]);
+  const stats = useMemo(() => ({
+    total: projects.length,
+    active: projects.filter(p => p.status === 'active').length,
+    totalBudget: projects.reduce((sum, p) => sum + (p.planned_budget || 0), 0),
+    totalSpent: projects.reduce((sum, p) => sum + (p.total_costs || 0), 0),
+    avgUtilization: projects.length > 0 
+      ? projects.reduce((sum, p) => sum + (p.budget_usage_percent || 0), 0) / projects.length 
+      : 0,
+  }), [projects]);
 
-  const hiddenCount = useMemo(() => {
-    if (!hideEmpty) return 0;
-    return projects
-      .filter(p => !selectedYear || p.project_year === selectedYear)
-      .filter(p => !statusFilter || p.status === statusFilter)
-      .filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        p.code.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .filter(p => p.total_costs === 0 && p.planned_budget === 0).length;
-  }, [projects, hideEmpty, selectedYear, statusFilter, searchTerm]);
-
-  const visibleProjects = useMemo(() => {
-    return processedProjects.slice(0, Number(currentPage) * Number(PROJECTS_PER_PAGE));
-  }, [processedProjects, currentPage]);
-
-  const hasMore = visibleProjects.length < processedProjects.length;
-
-  const handleLoadMore = () => setCurrentPage(prev => Number(prev) + 1);
-  const handleShowAll = () => setCurrentPage(Math.ceil(processedProjects.length / Number(PROJECTS_PER_PAGE)));
-
-  // Consistent button/input styles
-  const inputBaseStyle = "h-11 px-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 focus:bg-white transition-all";
-  const selectStyle = `${inputBaseStyle} pr-9 appearance-none cursor-pointer`;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
+        <p className="text-base font-semibold text-[#64748B]">Načítání projektů...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-12 animate-in">
-      {/* Search and Filters */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">
-        {/* Search input */}
+    <div className="space-y-6 animate-in pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Projekty</h1>
+          <p className="text-sm font-medium text-[#64748B] mt-1">
+            Přehled všech stavebních projektů
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <ProjectStatCard 
+          label="Celkem projektů" 
+          value={stats.total.toString()}
+          subValue={`${stats.active} aktivních`}
+          icon={Folder} 
+        />
+        <ProjectStatCard 
+          label="Celkový rozpočet" 
+          value={formatCurrency(stats.totalBudget)}
+          icon={DollarSign}
+          variant="success"
+        />
+        <ProjectStatCard 
+          label="Celkem čerpáno" 
+          value={formatCurrency(stats.totalSpent)}
+          icon={TrendingUp}
+        />
+        <ProjectStatCard 
+          label="Prům. využití" 
+          value={`${stats.avgUtilization.toFixed(1)}%`}
+          icon={BarChart3}
+          variant={stats.avgUtilization > 80 ? 'warning' : 'default'}
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
         <div className="relative flex-1">
-          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} aria-hidden="true" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
           <input
             type="text"
             placeholder="Hledat projekt dle názvu nebo kódu..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className={`${inputBaseStyle} w-full pl-10 pr-4`}
-            aria-label="Vyhledat projekt"
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
           />
         </div>
         
-        {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Hide empty checkbox - FIXED SIZE */}
-          <label className={`flex items-center gap-2 ${inputBaseStyle} cursor-pointer hover:border-[#CBD5E1]`}>
-            <input
-              type="checkbox"
-              checked={hideEmpty}
-              onChange={(e) => { setHideEmpty(e.target.checked); setCurrentPage(1); }}
-              className="w-4 h-4 rounded border-[#CBD5E1] bg-white text-[#5B9AAD] focus:ring-[#5B9AAD] focus:ring-offset-0 cursor-pointer"
-            />
-            <span className="text-sm font-medium text-[#0F172A] whitespace-nowrap">Skrýt prázdné</span>
-          </label>
-
-          {/* Year filter */}
-          <div className="relative">
-            <select
-              value={selectedYear || ''}
-              onChange={(e) => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setCurrentPage(1); }}
-              className={selectStyle}
-              aria-label="Filtrovat podle roku"
-            >
-              <option value="">Všechny roky</option>
-              {years.map(year => <option key={year} value={year}>{year}</option>)}
-            </select>
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} aria-hidden="true" />
-          </div>
-
-          {/* Status filter */}
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              className={selectStyle}
-              aria-label="Filtrovat podle stavu"
-            >
-              <option value="">Všechny stavy</option>
-              <option value="active">Aktivní</option>
-              <option value="completed">Dokončené</option>
-              <option value="on_hold">Pozastavené</option>
-            </select>
-            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} aria-hidden="true" />
-          </div>
-
-          {/* New project button */}
-          <button 
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center justify-center gap-2 h-11 px-4 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium hover:bg-[#4A8A9D] focus:ring-2 focus:ring-[#5B9AAD]/50 focus:ring-offset-2 transition-all whitespace-nowrap"
+        {/* Status Filter */}
+        <div className="relative">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'completed' | 'paused')}
+            className="h-11 pl-11 pr-10 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer min-w-[180px]"
           >
-            <Plus size={18} aria-hidden="true" />
-            <span>Nový projekt</span>
-          </button>
+            <option value="all">Všechny statusy</option>
+            <option value="active">Ve výstavbě</option>
+            <option value="completed">Dokončeno</option>
+            <option value="paused">Pozastaveno</option>
+          </select>
+          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none rotate-90" size={18} />
         </div>
       </div>
 
-      {/* Hidden count info */}
-      {hideEmpty && hiddenCount > 0 && (
-        <p className="text-sm text-[#64748B] flex items-center gap-2">
-          <EyeOff size={16} aria-hidden="true" />
-          Skryto {hiddenCount} prázdných projektů
-        </p>
-      )}
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-[#64748B]">
-          <Loader2 className="animate-spin text-[#5B9AAD] mb-4" size={36} />
-          <p className="text-sm font-medium">Načítání projektů...</p>
+      {/* Projects Grid */}
+      {filteredProjects.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm p-12 text-center">
+          <Folder size={48} className="mx-auto text-[#CBD5E1] mb-4" />
+          <p className="text-base font-semibold text-[#64748B]">Žádné projekty nenalezeny</p>
+          <p className="text-sm font-medium text-[#94A3B8] mt-1">Zkuste upravit vyhledávání nebo filtry</p>
         </div>
       ) : (
         <>
-          {visibleProjects.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {visibleProjects.map(p => <ProjectCard key={p.id} project={p} />)}
-              </div>
+          {/* Grid for cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredProjects.map((project) => (
+              <ProjectCard 
+                key={project.id} 
+                project={project} 
+                onClick={() => navigate(`/projects/${project.id}`)}
+              />
+            ))}
+          </div>
 
-              {/* Pagination */}
-              {hasMore && (
-                <div className="flex items-center justify-center gap-4 mt-10">
-                  <button
-                    onClick={handleLoadMore}
-                    className="px-6 py-2.5 border border-[#5B9AAD] text-[#5B9AAD] rounded-full text-sm font-medium hover:bg-[#5B9AAD]/5 focus:ring-2 focus:ring-[#5B9AAD]/50 transition-all"
-                  >
-                    Zobrazit další
-                  </button>
-                  <span className="text-sm text-[#64748B]">nebo</span>
-                  <button
-                    onClick={handleShowAll}
-                    className="text-sm text-[#5B9AAD] hover:text-[#4A8A9D] underline underline-offset-2 font-medium transition-colors"
-                  >
-                    Zobrazit všechny ({processedProjects.length})
-                  </button>
-                </div>
-              )}
-
-              {!hasMore && processedProjects.length > PROJECTS_PER_PAGE && (
-                <p className="text-center mt-10 text-sm text-[#64748B]">
-                  Zobrazeny všechny projekty ({processedProjects.length})
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="py-16 text-center bg-white rounded-2xl border border-[#E2E8F0] border-dashed">
-              <div className="w-16 h-16 bg-[#F1F5F9] rounded-2xl flex items-center justify-center mx-auto mb-5">
-                <SearchIcon size={28} className="text-[#94A3B8]" aria-hidden="true" />
-              </div>
-              <h3 className="text-base font-semibold text-[#0F172A] mb-1">
-                Žádné projekty nenalezeny
-              </h3>
-              <p className="text-sm text-[#64748B] mb-5">
-                Zkuste upravit filtry nebo vytvořte nový projekt.
-              </p>
-              <button 
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedYear(null);
-                  setStatusFilter('');
-                  setHideEmpty(false);
-                  setCurrentPage(1);
-                }}
-                className="px-5 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium hover:bg-[#4A8A9D] transition-colors"
-              >
-                Zrušit filtry
-              </button>
-            </div>
-          )}
+          {/* Footer count */}
+          <div className="text-center pt-4">
+            <p className="text-sm font-medium text-[#64748B]">
+              Zobrazeno <span className="font-bold text-[#0F172A]">{filteredProjects.length}</span> z <span className="font-bold text-[#0F172A]">{projects.length}</span> projektů
+            </p>
+          </div>
         </>
       )}
-
-      {showNewModal && <NewProjectModal onClose={() => setShowNewModal(false)} onSave={() => { setShowNewModal(false); fetchProjects(); }} showToast={showToast} />}
-      {ToastComponent}
     </div>
   );
 };
