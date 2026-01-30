@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 
@@ -19,52 +19,44 @@ const Reports = lazy(() => import('./pages/Reports'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Admin = lazy(() => import('./pages/Admin'));
 
-const pageTitles: Record<string, string> = {
-  '/': 'Přehled',
-  '/projects': 'Projekty',
-  '/invoices': 'Faktury',
-  '/reports': 'Reporty',
-  '/settings': 'Nastavení',
-  '/admin': 'Administrace',
-};
-
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="flex flex-col items-center gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD]" />
-      <p className="fluid-base font-medium text-[#64748B]">Načítání...</p>
+      <p className="text-base font-medium text-[#64748B]">Načítání...</p>
     </div>
   </div>
 );
 
 const FullPageLoader: React.FC<{ message?: string }> = ({ message = 'Načítání...' }) => (
-  <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8]">
+  <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
     <div className="flex flex-col items-center gap-4">
       <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD]" />
-      <p className="fluid-lg font-medium text-[#64748B]">{message}</p>
+      <p className="text-lg font-medium text-[#64748B]">{message}</p>
     </div>
   </div>
 );
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const location = useLocation();
-  const { signOut } = useAuth();
-  
-  const pathWithoutParams = location.pathname.split('/').slice(0, 2).join('/');
-  const title = pageTitles[pathWithoutParams] || 'JK Stavby';
-
   return (
-    <div className="min-h-screen bg-[#F4F6F8]">
-      <Sidebar onLogout={signOut} />
-      {/* md:ml-[240px] = sidebar width, keep original value */}
-      <div className="md:ml-[240px] flex flex-col min-h-screen">
-        <Header title={title} />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Sidebar - desktop only */}
+      <Sidebar />
+      
+      {/* Main content area - offset by sidebar width on desktop */}
+      <div className="lg:ml-[260px] flex flex-col min-h-screen">
+        {/* Header */}
+        <Header />
+        
+        {/* Main content - offset by header height */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-[88px] lg:pt-[96px] pb-24 lg:pb-8">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>
         </main>
       </div>
+      
+      {/* Bottom nav - mobile only */}
       <BottomNav />
     </div>
   );
@@ -94,9 +86,11 @@ const App: React.FC = () => {
   return (
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
+        {/* Public routes */}
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPassword />} />
         
+        {/* Protected routes */}
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
@@ -105,6 +99,7 @@ const App: React.FC = () => {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
