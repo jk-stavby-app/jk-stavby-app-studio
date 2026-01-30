@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Folder, Search, Loader2, TrendingUp, ChevronRight, 
-  Calendar, DollarSign, BarChart3, Filter
+  Folder, Search, Loader2, TrendingUp, ChevronRight, ChevronDown,
+  Calendar, DollarSign, BarChart3, Filter, Plus, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Project } from '../types';
 import { formatCurrency } from '../constants';
+
+const ITEMS_PER_PAGE = 50;
 
 /**
  * UNIFIED StatCard - 2026 Enterprise SaaS
@@ -109,7 +111,7 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
     {/* Header */}
     <div className="flex items-start justify-between gap-3 mb-4">
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="px-2 py-0.5 bg-[#F1F5F9] border border-[#E2E8F0] rounded-md text-xs font-bold text-[#64748B]">
             {project.code}
           </span>
@@ -143,41 +145,106 @@ const Projects: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
+  const [hideEmpty, setHideEmpty] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Get available years from projects
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    projects.forEach(p => {
+      if (p.created_at) {
+        years.add(new Date(p.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [projects]);
+
+  // Fetch projects with pagination
+  const fetchProjects = async (reset: boolean = false) => {
+    try {
+      if (reset) {
+        setLoading(true);
+        setOffset(0);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const currentOffset = reset ? 0 : offset;
+
+      // Get total count
+      if (reset) {
+        const { count } = await supabase
+          .from('project_dashboard')
+          .select('*', { count: 'exact', head: true });
+        setTotalCount(count || 0);
+      }
+
+      const { data, error } = await supabase
+        .from('project_dashboard')
+        .select('*')
+        .order('total_costs', { ascending: false })
+        .range(currentOffset, currentOffset + ITEMS_PER_PAGE - 1);
+
+      if (error) throw error;
+
+      const newProjects = data || [];
+
+      if (reset) {
+        setProjects(newProjects);
+      } else {
+        setProjects(prev => [...prev, ...newProjects]);
+      }
+
+      setHasMore(newProjects.length === ITEMS_PER_PAGE);
+      setOffset(currentOffset + newProjects.length);
+
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchProjects() {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('project_dashboard')
-          .select('*')
-          .order('total_costs', { ascending: false });
-
-        if (error) throw error;
-        setProjects(data || []);
-      } catch (err) {
-        console.error('Error fetching projects:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchProjects();
+    fetchProjects(true);
   }, []);
 
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchProjects(false);
+    }
+  };
+
+  // Filter projects
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
+      // Search filter
       const matchesSearch = 
         project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         project.code.toLowerCase().includes(searchTerm.toLowerCase());
       
+      // Status filter
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
       
-      return matchesSearch && matchesStatus;
-    });
-  }, [projects, searchTerm, statusFilter]);
+      // Year filter
+      const projectYear = project.created_at ? new Date(project.created_at).getFullYear().toString() : '';
+      const matchesYear = yearFilter === 'all' || projectYear === yearFilter;
 
+      // Hide empty filter (projects with 0 costs)
+      const matchesEmpty = !hideEmpty || project.total_costs > 0;
+      
+      return matchesSearch && matchesStatus && matchesYear && matchesEmpty;
+    });
+  }, [projects, searchTerm, statusFilter, yearFilter, hideEmpty]);
+
+  // Calculate stats from ALL projects (not filtered)
   const stats = useMemo(() => ({
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
@@ -187,6 +254,12 @@ const Projects: React.FC = () => {
       ? projects.reduce((sum, p) => sum + (p.budget_usage_percent || 0), 0) / projects.length 
       : 0,
   }), [projects]);
+
+  // Handle new project (placeholder - would open modal or navigate)
+  const handleNewProject = () => {
+    // TODO: Implement new project creation
+    alert('Funkce pro vytvoření nového projektu bude dostupná v příští verzi.');
+  };
 
   if (loading) {
     return (
@@ -204,9 +277,16 @@ const Projects: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Projekty</h1>
           <p className="text-sm font-medium text-[#64748B] mt-1">
-            Přehled všech stavebních projektů
+            Celkem {totalCount.toLocaleString('cs-CZ')} projektů v systému
           </p>
         </div>
+        <button 
+          onClick={handleNewProject}
+          className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm w-full sm:w-auto"
+        >
+          <Plus size={18} />
+          <span>Nový projekt</span>
+        </button>
       </div>
 
       {/* Stats Grid */}
@@ -237,34 +317,103 @@ const Projects: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-          <input
-            type="text"
-            placeholder="Hledat projekt dle názvu nebo kódu..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
-          />
-        </div>
-        
-        {/* Status Filter */}
-        <div className="relative">
-          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'completed' | 'paused')}
-            className="h-11 pl-11 pr-10 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer min-w-[180px]"
+      <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
+            <input
+              type="text"
+              placeholder="Hledat projekt dle názvu nebo kódu..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 h-11 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 focus:bg-white transition-all"
+            />
+          </div>
+          
+          {/* Status Filter */}
+          <div className="relative">
+            <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'completed' | 'paused')}
+              className="h-11 pl-11 pr-10 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:bg-white appearance-none cursor-pointer min-w-[160px]"
+            >
+              <option value="all">Všechny statusy</option>
+              <option value="active">Ve výstavbě</option>
+              <option value="completed">Dokončeno</option>
+              <option value="paused">Pozastaveno</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={18} />
+          </div>
+
+          {/* Year Filter */}
+          <div className="relative">
+            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} />
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="h-11 pl-11 pr-10 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:bg-white appearance-none cursor-pointer min-w-[140px]"
+            >
+              <option value="all">Všechny roky</option>
+              {availableYears.map(year => (
+                <option key={year} value={year.toString()}>{year}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={18} />
+          </div>
+
+          {/* Hide Empty Toggle */}
+          <button
+            onClick={() => setHideEmpty(!hideEmpty)}
+            className={`h-11 px-4 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all border ${
+              hideEmpty 
+                ? 'bg-[#5B9AAD] text-white border-[#5B9AAD]' 
+                : 'bg-[#F8FAFC] text-[#64748B] border-[#E2E8F0] hover:border-[#5B9AAD] hover:text-[#5B9AAD]'
+            }`}
           >
-            <option value="all">Všechny statusy</option>
-            <option value="active">Ve výstavbě</option>
-            <option value="completed">Dokončeno</option>
-            <option value="paused">Pozastaveno</option>
-          </select>
-          <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none rotate-90" size={18} />
+            {hideEmpty ? <EyeOff size={16} /> : <Eye size={16} />}
+            <span className="hidden sm:inline">{hideEmpty ? 'Skryty prázdné' : 'Skrýt prázdné'}</span>
+          </button>
         </div>
+
+        {/* Active filters summary */}
+        {(statusFilter !== 'all' || yearFilter !== 'all' || hideEmpty || searchTerm) && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#E2E8F0] flex-wrap">
+            <span className="text-xs font-semibold text-[#64748B]">Aktivní filtry:</span>
+            {searchTerm && (
+              <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
+                Hledání: "{searchTerm}"
+              </span>
+            )}
+            {statusFilter !== 'all' && (
+              <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
+                Status: {statusFilter === 'active' ? 'Ve výstavbě' : statusFilter === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
+              </span>
+            )}
+            {yearFilter !== 'all' && (
+              <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
+                Rok: {yearFilter}
+              </span>
+            )}
+            {hideEmpty && (
+              <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
+                Bez prázdných
+              </span>
+            )}
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setStatusFilter('all');
+                setYearFilter('all');
+                setHideEmpty(false);
+              }}
+              className="px-2 py-1 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+            >
+              Zrušit vše
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Projects Grid */}
@@ -287,11 +436,30 @@ const Projects: React.FC = () => {
             ))}
           </div>
 
-          {/* Footer count */}
-          <div className="text-center pt-4">
-            <p className="text-sm font-medium text-[#64748B]">
-              Zobrazeno <span className="font-bold text-[#0F172A]">{filteredProjects.length}</span> z <span className="font-bold text-[#0F172A]">{projects.length}</span> projektů
-            </p>
+          {/* Footer with count + Load More */}
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm px-5 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm font-medium text-[#64748B]">
+                Zobrazeno <span className="font-bold text-[#0F172A]">{filteredProjects.length}</span> z <span className="font-bold text-[#0F172A]">{totalCount.toLocaleString('cs-CZ')}</span> projektů
+              </p>
+              
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="flex items-center justify-center gap-2 h-10 px-5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] hover:border-[#5B9AAD] transition-all disabled:opacity-50 w-full sm:w-auto"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Načítání...</span>
+                    </>
+                  ) : (
+                    <span>Načíst dalších {ITEMS_PER_PAGE}</span>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
