@@ -7,6 +7,139 @@ import { useToast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../lib/userService';
 
+/**
+ * UNIFIED StatCard - 2026 Enterprise SaaS
+ */
+const AdminStatCard: React.FC<{
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  variant?: 'default' | 'success' | 'warning';
+}> = ({ label, value, icon: Icon, variant = 'default' }) => {
+  const iconStyles = {
+    default: 'bg-[#F0F9FF] text-[#5B9AAD]',
+    success: 'bg-emerald-50 text-emerald-600',
+    warning: 'bg-amber-50 text-amber-600',
+  };
+
+  return (
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm ${iconStyles[variant]}`}>
+          <Icon size={20} strokeWidth={2} />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <h4 className="text-[1.05rem] sm:text-[1.15rem] font-semibold text-[#334155] leading-tight">{label}</h4>
+        <p className="text-[1.1rem] sm:text-[1.2rem] font-bold text-[#0F172A] tabular-nums">{value}</p>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * RoleBadge
+ */
+const RoleBadge: React.FC<{ role: 'admin' | 'user' }> = ({ role }) => {
+  const styles = {
+    admin: 'bg-red-50 text-red-700 border-red-200',
+    user: 'bg-slate-50 text-slate-700 border-slate-200',
+  };
+  const labels = { admin: 'Administrátor', user: 'Uživatel' };
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[role]}`}>
+      {labels[role]}
+    </span>
+  );
+};
+
+/**
+ * StatusBadge
+ */
+const StatusBadge: React.FC<{ isActive: boolean }> = ({ isActive }) => {
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+      isActive 
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+        : 'bg-slate-50 text-slate-700 border-slate-200'
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+      {isActive ? 'Aktivní' : 'Deaktivován'}
+    </span>
+  );
+};
+
+/**
+ * UserCard - Mobile view
+ */
+const UserCard: React.FC<{ 
+  user: UserProfile; 
+  currentUserId?: string;
+  onEdit: () => void; 
+  onToggleActive: () => void;
+}> = ({ user, currentUserId, onEdit, onToggleActive }) => (
+  <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-sm">
+    {/* Header */}
+    <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#E1EFF3] text-[#3A6A7D] flex items-center justify-center font-bold text-sm border border-[#5B9AAD]/10">
+          {user.full_name 
+            ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() 
+            : <Users size={16} />
+          }
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-[#0F172A] truncate">{user.full_name || 'Nezadáno'}</p>
+          <p className="text-xs font-medium text-[#64748B] truncate">{user.email}</p>
+        </div>
+      </div>
+      <RoleBadge role={user.role} />
+    </div>
+
+    {/* Divider */}
+    <div className="border-t border-[#F1F5F9] my-3" />
+
+    {/* Status + Last login */}
+    <div className="flex items-center justify-between mb-3">
+      <StatusBadge isActive={user.is_active} />
+      <div className="text-right">
+        <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Poslední přihlášení</p>
+        <p className="text-xs font-medium text-[#64748B]">
+          {user.last_login 
+            ? new Date(user.last_login).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' }) 
+            : 'Nikdy'}
+        </p>
+      </div>
+    </div>
+
+    {/* Actions */}
+    <div className="flex gap-2 pt-3 border-t border-[#F1F5F9]">
+      <button 
+        onClick={onEdit}
+        className="flex-1 h-10 flex items-center justify-center gap-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F1F5F9] transition-all"
+      >
+        <Pencil size={14} />
+        Upravit
+      </button>
+      <button
+        onClick={onToggleActive}
+        disabled={user.id === currentUserId}
+        className={`flex-1 h-10 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all ${
+          user.id === currentUserId 
+            ? 'bg-[#F8FAFC] border border-[#E2E8F0] text-[#94A3B8] cursor-not-allowed' 
+            : user.is_active 
+              ? 'bg-red-50 border border-red-200 text-red-700 hover:bg-red-100' 
+              : 'bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+        }`}
+      >
+        {user.is_active ? <X size={14} /> : <UserCheck size={14} />}
+        {user.is_active ? 'Deaktivovat' : 'Aktivovat'}
+      </button>
+    </div>
+  </div>
+);
+
 const Admin: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -125,8 +258,9 @@ const Admin: React.FC = () => {
       }
       fetchUsers();
       handleCloseModal();
-    } catch (err: any) {
-      showToast(err.message || 'Chyba při ukládání', 'error');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Chyba při ukládání';
+      showToast(errorMessage, 'error');
     } finally {
       setIsSaving(false);
     }
@@ -161,164 +295,180 @@ const Admin: React.FC = () => {
     admins: users.filter(u => u.role === 'admin').length,
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
+        <p className="text-base font-semibold text-[#64748B]">Načítání uživatelů...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A] tracking-tight">Správa uživatelů</h2>
-          <p className="text-sm text-[#64748B]">Správa přístupů a oprávnění v systému JK Stavby</p>
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Správa uživatelů</h1>
+          <p className="text-sm font-medium text-[#64748B] mt-1">Správa přístupů a oprávnění v systému</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm w-full sm:w-auto"
         >
           <Plus size={18} />
           <span>Přidat uživatele</span>
         </button>
       </div>
 
-      {/* Stats Grid - UNIFIED */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* Celkem uživatelů */}
-        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#F0F9FF] rounded-xl flex items-center justify-center">
-              <Users size={18} className="text-[#5B9AAD]" />
-            </div>
-          </div>
-          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
-            Celkem uživatelů
-          </h4>
-          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.total}</p>
-        </div>
-
-        {/* Aktivní přístup */}
-        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#D1FAE5] rounded-xl flex items-center justify-center">
-              <UserCheck size={18} className="text-[#059669]" />
-            </div>
-          </div>
-          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
-            Aktivní přístup
-          </h4>
-          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.active}</p>
-        </div>
-
-        {/* Administrátoři */}
-        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
-              <Shield size={18} className="text-[#D97706]" />
-            </div>
-          </div>
-          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
-            Administrátoři
-          </h4>
-          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.admins}</p>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative w-full">
-        <label htmlFor="search-users" className="sr-only">Hledat uživatele</label>
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
-        <input
-          id="search-users"
-          type="text"
-          placeholder="Dle jména nebo e-mailu..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] transition-all"
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <AdminStatCard 
+          label="Celkem uživatelů" 
+          value={stats.total.toString()}
+          icon={Users} 
+        />
+        <AdminStatCard 
+          label="Aktivní přístup" 
+          value={stats.active.toString()}
+          icon={UserCheck}
+          variant="success"
+        />
+        <AdminStatCard 
+          label="Administrátoři" 
+          value={stats.admins.toString()}
+          icon={Shield}
+          variant="warning"
         />
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
-            <p className="text-sm font-medium text-[#64748B]">Načítání seznamu...</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
-              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
+        <input
+          type="text"
+          placeholder="Hledat dle jména nebo e-mailu..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
+        />
+      </div>
+
+      {/* Users List */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+        
+        {/* MOBILE: Card View */}
+        <div className="lg:hidden p-4 space-y-3 bg-[#F8FAFC]">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <Users size={48} className="mx-auto text-[#CBD5E1] mb-4" />
+              <p className="text-sm font-semibold text-[#64748B]">Žádní uživatelé nenalezeni</p>
+            </div>
+          ) : (
+            filteredUsers.map((user) => (
+              <UserCard 
+                key={user.id} 
+                user={user}
+                currentUserId={currentUser?.id}
+                onEdit={() => handleOpenModal(user)}
+                onToggleActive={() => handleToggleActive(user)}
+              />
+            ))
+          )}
+        </div>
+
+        {/* DESKTOP: Table View */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Uživatel</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Role</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Stav</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Poslední přihlášení</th>
+                <th className="px-5 py-3.5 text-right text-xs font-bold text-[#64748B] uppercase tracking-wider">Akce</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F1F5F9]">
+              {filteredUsers.length === 0 ? (
                 <tr>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Uživatel</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Role</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Stav</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Poslední přihlášení</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-[#64748B]">Akce</th>
+                  <td colSpan={5} className="px-5 py-12 text-center">
+                    <Users size={48} className="mx-auto text-[#CBD5E1] mb-4" />
+                    <p className="text-sm font-semibold text-[#64748B]">Žádní uživatelé nenalezeni</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F5F9]">
-                {filteredUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-[#FAFBFC] transition-colors">
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-[#FAFBFC] transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[#E1EFF3] text-[#3A6A7D] flex items-center justify-center font-bold text-sm">
-                          {u.full_name ? u.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <Users size={16} />}
+                        <div className="w-10 h-10 rounded-full bg-[#E1EFF3] text-[#3A6A7D] flex items-center justify-center font-bold text-sm border border-[#5B9AAD]/10">
+                          {user.full_name 
+                            ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() 
+                            : <Users size={16} />
+                          }
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-[#0F172A]">{u.full_name || 'Nezadáno'}</p>
-                          <p className="text-xs text-[#64748B]">{u.email}</p>
+                          <p className="text-sm font-bold text-[#0F172A]">{user.full_name || 'Nezadáno'}</p>
+                          <p className="text-xs font-medium text-[#64748B]">{user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        u.role === 'admin' 
-                          ? 'bg-[#FEE2E2] text-[#DC2626]' 
-                          : 'bg-[#F1F5F9] text-[#64748B]'
-                      }`}>
-                        {u.role === 'admin' ? 'administrátor' : 'uživatel'}
-                      </span>
+                      <RoleBadge role={user.role} />
                     </td>
                     <td className="px-5 py-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        u.is_active 
-                          ? 'bg-[#ECFDF5] text-[#059669]' 
-                          : 'bg-[#F1F5F9] text-[#64748B]'
-                      }`}>
-                        {u.is_active ? 'aktivní' : 'deaktivován'}
-                      </span>
+                      <StatusBadge isActive={user.is_active} />
                     </td>
-                    <td className="px-5 py-4 text-sm text-[#64748B]">
-                      {u.last_login 
-                        ? new Date(u.last_login).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+                    <td className="px-5 py-4 text-sm font-medium text-[#64748B]">
+                      {user.last_login 
+                        ? new Date(user.last_login).toLocaleDateString('cs-CZ', { 
+                            day: 'numeric', 
+                            month: 'numeric', 
+                            year: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          }) 
                         : 'Nikdy'}
                     </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-end gap-2">
                         <button 
-                          onClick={() => handleOpenModal(u)}
-                          className="p-2 text-[#64748B] rounded-lg hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
+                          onClick={() => handleOpenModal(user)}
+                          className="p-2.5 text-[#64748B] rounded-xl hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-all"
                           aria-label="Upravit uživatele"
                         >
                           <Pencil size={16} />
                         </button>
                         <button
-                          onClick={() => handleToggleActive(u)}
-                          disabled={u.id === currentUser?.id}
-                          className={`p-2 rounded-lg transition-colors ${
-                            u.id === currentUser?.id 
-                              ? 'opacity-30 cursor-not-allowed text-[#94A3B8]' 
-                              : u.is_active 
-                                ? 'text-[#DC2626] hover:bg-[#FEF2F2]' 
-                                : 'text-[#059669] hover:bg-[#ECFDF5]'
+                          onClick={() => handleToggleActive(user)}
+                          disabled={user.id === currentUser?.id}
+                          className={`p-2.5 rounded-xl transition-all ${
+                            user.id === currentUser?.id 
+                              ? 'text-[#CBD5E1] cursor-not-allowed' 
+                              : user.is_active 
+                                ? 'text-red-600 hover:bg-red-50' 
+                                : 'text-emerald-600 hover:bg-emerald-50'
                           }`}
-                          aria-label={u.is_active ? 'Deaktivovat' : 'Aktivovat'}
+                          aria-label={user.is_active ? 'Deaktivovat' : 'Aktivovat'}
                         >
-                          <X size={16} />
+                          {user.is_active ? <X size={16} /> : <UserCheck size={16} />}
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        {filteredUsers.length > 0 && (
+          <div className="px-5 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0]">
+            <p className="text-sm font-medium text-[#64748B]">
+              Zobrazeno <span className="font-bold text-[#0F172A]">{filteredUsers.length}</span> z <span className="font-bold text-[#0F172A]">{users.length}</span> uživatelů
+            </p>
           </div>
         )}
       </div>
@@ -326,57 +476,65 @@ const Admin: React.FC = () => {
       {/* Modal */}
       {showModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
+          onClick={(e) => e.target === e.currentTarget && handleCloseModal()}
         >
-          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] w-full max-w-md my-8 shadow-xl">
+          <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] w-full max-w-md my-8 shadow-2xl">
+            {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#E2E8F0]">
               <h2 className="text-lg font-bold text-[#0F172A]">
                 {modalMode === 'edit' ? 'Upravit uživatele' : 'Nový uživatel'}
               </h2>
               <button 
                 onClick={handleCloseModal}
-                className="p-2 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] transition-colors"
+                className="p-2 rounded-xl text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-all"
               >
                 <X size={20} />
               </button>
             </div>
             
+            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Full name */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[#475569]">Celé jméno *</label>
+                <label className="text-sm font-semibold text-[#334155]">Celé jméno *</label>
                 <input 
                   type="text" 
                   value={formData.full_name} 
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})} 
-                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
+                  placeholder="Jan Novák"
                   required 
                 />
               </div>
               
+              {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[#475569]">E-mailová adresa *</label>
+                <label className="text-sm font-semibold text-[#334155]">E-mailová adresa *</label>
                 <input 
                   type="email" 
                   value={formData.email} 
                   disabled={modalMode === 'edit'} 
                   onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
+                  placeholder="jan@example.cz"
                   required 
                 />
               </div>
 
+              {/* Password - only for create */}
               {modalMode === 'create' && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-[#475569]">Heslo *</label>
+                  <label className="text-sm font-semibold text-[#334155]">Heslo *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 pr-12 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
+                      className="w-full px-4 pr-12 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
                       placeholder="Minimálně 6 znaků"
                       minLength={6}
                     />
@@ -391,41 +549,44 @@ const Admin: React.FC = () => {
                 </div>
               )}
 
+              {/* Phone + Position */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-[#475569]">Telefon</label>
+                  <label className="text-sm font-semibold text-[#334155]">Telefon</label>
                   <input 
                     type="text" 
                     value={formData.phone} 
                     onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
+                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
                     placeholder="+420..."
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-[#475569]">Pozice</label>
+                  <label className="text-sm font-semibold text-[#334155]">Pozice</label>
                   <input 
                     type="text" 
                     value={formData.position} 
                     onChange={(e) => setFormData({...formData, position: e.target.value})} 
-                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
-                    placeholder="Např. PM"
+                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
+                    placeholder="Stavbyvedoucí"
                   />
                 </div>
               </div>
 
+              {/* Role */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-[#475569]">Role</label>
+                <label className="text-sm font-semibold text-[#334155]">Role</label>
                 <select 
                   value={formData.role} 
                   onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})} 
-                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer"
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer"
                 >
                   <option value="user">Uživatel</option>
                   <option value="admin">Administrátor</option>
                 </select>
               </div>
 
+              {/* Active checkbox */}
               <label className="flex items-center gap-3 cursor-pointer py-2">
                 <input 
                   type="checkbox" 
@@ -433,10 +594,11 @@ const Admin: React.FC = () => {
                   onChange={(e) => setFormData({...formData, is_active: e.target.checked})} 
                   className="w-5 h-5 rounded border-[#E2E8F0] text-[#5B9AAD] focus:ring-[#5B9AAD]"
                 />
-                <span className="text-sm font-medium text-[#0F172A]">Aktivní účet</span>
+                <span className="text-sm font-semibold text-[#0F172A]">Aktivní účet</span>
               </label>
 
-              <div className="flex gap-3 pt-4 border-t border-[#E2E8F0]">
+              {/* Actions */}
+              <div className="flex gap-3 pt-5 border-t border-[#E2E8F0]">
                 <button 
                   type="button" 
                   onClick={handleCloseModal} 
@@ -457,7 +619,7 @@ const Admin: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {ToastComponent}
     </div>
   );
