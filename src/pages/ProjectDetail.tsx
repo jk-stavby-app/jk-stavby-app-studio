@@ -107,28 +107,28 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in pb-12">
-      {/* Breadcrumbs - FIXED: consistent styling, no uppercase, proper truncate */}
+      {/* Breadcrumbs - FIXED: single line, proper alignment */}
       <nav 
-        className="flex items-center gap-2 text-sm text-[#64748B]"
+        className="flex items-center gap-2 text-sm"
         aria-label="Breadcrumb"
       >
         <Link 
           to="/" 
-          className="flex items-center gap-1.5 hover:text-[#5B9AAD] transition-colors"
+          className="flex items-center gap-1.5 text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap"
         >
           <Home size={14} aria-hidden="true" />
           <span>Přehled</span>
         </Link>
-        <ChevronRight size={14} className="text-[#CBD5E1]" aria-hidden="true" />
+        <ChevronRight size={14} className="text-[#CBD5E1] shrink-0" aria-hidden="true" />
         <Link 
           to="/projects" 
-          className="hover:text-[#5B9AAD] transition-colors"
+          className="text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap"
         >
           Projekty
         </Link>
-        <ChevronRight size={14} className="text-[#CBD5E1]" aria-hidden="true" />
+        <ChevronRight size={14} className="text-[#CBD5E1] shrink-0" aria-hidden="true" />
         <span 
-          className="text-[#0F172A] font-medium truncate max-w-[200px] sm:max-w-[300px]"
+          className="text-[#1E3A5F] font-semibold truncate max-w-[300px]"
           title={project.name}
         >
           {project.name}
@@ -167,7 +167,7 @@ const ProjectDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Switcher */}
+        {/* Tab Switcher - CONSISTENT SIZE */}
         <div className="flex p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] w-full lg:w-auto">
           <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Přehled" />
           <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={History} label="Audit Log" />
@@ -177,12 +177,12 @@ const ProjectDetail: React.FC = () => {
 
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in">
-          {/* Stats Grid */}
+          {/* Stats Grid - FIXED HIERARCHY: label as title on top */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Budget Card with Edit */}
             <div className={`bg-white rounded-2xl p-5 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-4 ring-[#5B9AAD]/10' : 'border-[#E2E8F0]'}`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-[#64748B]">Smluvní rozpočet</span>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-semibold text-[#475569]">Smluvní rozpočet</span>
                 <div className="flex items-center gap-1">
                   {isAdmin && !isEditingBudget && (
                     <button 
@@ -205,7 +205,7 @@ const ProjectDetail: React.FC = () => {
                     type="number"
                     value={budgetValue}
                     onChange={(e) => setBudgetValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-base text-[#0F172A] font-semibold focus:outline-none focus:border-[#5B9AAD] transition-all"
+                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-lg text-[#0F172A] font-bold focus:outline-none focus:border-[#5B9AAD] transition-all tabular-nums"
                     aria-label="Nová hodnota rozpočtu"
                   />
                   <textarea
@@ -218,14 +218,14 @@ const ProjectDetail: React.FC = () => {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => { setIsEditingBudget(false); setBudgetValue(project.planned_budget); setBudgetReason(''); }} 
-                      className="flex-1 py-2 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-xs font-medium hover:bg-[#F8FAFC]"
+                      className="flex-1 py-2.5 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-sm font-medium hover:bg-[#F8FAFC]"
                     >
                       Zrušit
                     </button>
                     <button 
                       onClick={handleSaveBudget} 
                       disabled={isSavingBudget} 
-                      className="flex-1 py-2 bg-[#5B9AAD] text-white rounded-xl text-xs font-medium flex items-center justify-center gap-1 hover:bg-[#4A8A9D]"
+                      className="flex-1 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#4A8A9D]"
                     >
                       {isSavingBudget ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                       Uložit
@@ -234,10 +234,10 @@ const ProjectDetail: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h3 className="text-xl font-bold tracking-tight text-[#0F172A] mb-1 tabular-nums">
+                  <h3 className="text-2xl font-bold tracking-tight text-[#0F172A] tabular-nums">
                     {formatCurrency(project.planned_budget)}
                   </h3>
-                  <p className="text-xs text-[#5B9AAD] font-medium flex items-center gap-1">
+                  <p className="text-xs text-[#5B9AAD] font-medium flex items-center gap-1 mt-1">
                     <ShieldCheck size={12} aria-hidden="true" />
                     Schváleno investorem
                   </p>
@@ -361,7 +361,7 @@ const ProjectDetail: React.FC = () => {
 const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ElementType; label: string }> = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 lg:flex-none ${
+    className={`flex items-center justify-center gap-2 h-11 px-4 rounded-lg text-sm font-medium transition-all flex-1 lg:flex-none ${
       active ? 'bg-[#5B9AAD] text-white' : 'text-[#64748B] hover:bg-[#E2E8F0]/50'
     }`}
   >
@@ -370,17 +370,18 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.El
   </button>
 );
 
+/* FIXED: Label is now title-sized, value below is larger */
 const StatCard: React.FC<{ label: string; value: string; icon: React.ElementType; isWarning?: boolean; subValue?: string }> = ({ label, value, icon: Icon, isWarning, subValue }) => (
   <div className={`bg-white rounded-2xl p-5 border transition-all ${isWarning ? 'border-[#FECACA] bg-[#FEF2F2]' : 'border-[#E2E8F0]'}`}>
-    <div className="flex items-center justify-between mb-3">
-      <span className={`text-xs font-medium ${isWarning ? 'text-[#DC2626]' : 'text-[#64748B]'}`}>{label}</span>
+    <div className="flex items-center justify-between mb-4">
+      <span className={`text-sm font-semibold ${isWarning ? 'text-[#DC2626]' : 'text-[#475569]'}`}>{label}</span>
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F9FF] text-[#5B9AAD]'}`}>
         <Icon size={18} aria-hidden="true" />
       </div>
     </div>
-    <div className="space-y-0.5">
-      <h3 className={`text-xl font-bold tracking-tight tabular-nums ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
-      {subValue && <p className="text-xs text-[#64748B]">{subValue}</p>}
+    <div>
+      <h3 className={`text-2xl font-bold tracking-tight tabular-nums ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
+      {subValue && <p className="text-xs text-[#64748B] mt-1">{subValue}</p>}
     </div>
   </div>
 );
