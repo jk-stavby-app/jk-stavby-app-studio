@@ -7,10 +7,6 @@ import { Calendar, FileText, Loader2, TrendingUp, DollarSign, PieChart as PieIco
 import { COLORS, formatCurrency } from '../constants';
 import { supabase } from '../lib/supabase';
 
-// ============================================
-// TYPY
-// ============================================
-
 interface DashboardStats {
   total_projects: number;
   active_projects: number;
@@ -50,10 +46,6 @@ interface BudgetComparison {
   actual: number;
 }
 
-// ============================================
-// KOMPONENTA
-// ============================================
-
 const Reports: React.FC = () => {
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [monthlyInvoices, setMonthlyInvoices] = useState<InvoiceData[]>([]);
@@ -69,74 +61,38 @@ const Reports: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Paralelní fetch všech dat
         const [statsRes, projRes, invRes] = await Promise.all([
-          supabase
-            .from('dashboard_stats')
-            .select('*')
-            .single(),
-          supabase
-            .from('project_dashboard')
+          supabase.from('dashboard_stats').select('*').single(),
+          supabase.from('project_dashboard')
             .select('id, name, code, planned_budget, total_costs, budget_usage_percent')
             .gt('total_costs', 0)
             .order('total_costs', { ascending: false })
             .limit(10),
-          supabase
-            .from('project_invoices')
+          supabase.from('project_invoices')
             .select('date_issue, total_amount, supplier_name')
             .not('project_id', 'is', null)
             .order('date_issue', { ascending: false })
             .limit(500)
         ]);
         
-        // Kontrola zda komponenta stále existuje
         if (!isMounted) return;
 
-        // Error handling
-        if (statsRes.error) {
-          console.error('Stats error:', statsRes.error);
-        }
-        if (projRes.error) {
-          console.error('Projects error:', projRes.error);
-        }
-        if (invRes.error) {
-          console.error('Invoices error:', invRes.error);
-        }
-        
-        // Nastavení dat s type assertion
-        if (statsRes.data) {
-          setStats(statsRes.data as DashboardStats);
-        }
-        
-        if (projRes.data) {
-          setProjects(projRes.data as ProjectData[]);
-        }
-        
-        if (invRes.data) {
-          setMonthlyInvoices(invRes.data as InvoiceData[]);
-        }
+        if (statsRes.data) setStats(statsRes.data as DashboardStats);
+        if (projRes.data) setProjects(projRes.data as ProjectData[]);
+        if (invRes.data) setMonthlyInvoices(invRes.data as InvoiceData[]);
         
       } catch (err) {
         console.error('Reports fetch error:', err);
-        if (isMounted) {
-          setError('Nepodařilo se načíst data reportů');
-        }
+        if (isMounted) setError('Nepodařilo se načíst data reportů');
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
     
     fetchReportData();
-    
-    // Cleanup
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  // Agregace měsíčních dat
   const monthlyAggregated = useMemo<MonthlyData[]>(() => {
     if (!monthlyInvoices.length) return [];
     
@@ -154,12 +110,10 @@ const Reports: React.FC = () => {
     return Object.entries(months).map(([month, total]) => ({ month, total }));
   }, [monthlyInvoices]);
 
-  // Top dodavatelé
   const supplierData = useMemo<SupplierData[]>(() => {
     if (!monthlyInvoices.length) return [];
     
     const suppliers: Record<string, number> = {};
-    
     monthlyInvoices.forEach((inv) => {
       if (inv.supplier_name) {
         suppliers[inv.supplier_name] = (suppliers[inv.supplier_name] || 0) + (inv.total_amount || 0);
@@ -172,10 +126,8 @@ const Reports: React.FC = () => {
       .slice(0, 5);
   }, [monthlyInvoices]);
 
-  // Porovnání rozpočtů
   const budgetComparison = useMemo<BudgetComparison[]>(() => {
     if (!projects.length) return [];
-    
     return projects.map((p) => ({
       name: p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name,
       planned: p.planned_budget || 0,
@@ -183,187 +135,128 @@ const Reports: React.FC = () => {
     }));
   }, [projects]);
 
-  // Tooltip formatter
-  const tooltipFormatter = useCallback((value: number): string => {
-    return formatCurrency(value);
-  }, []);
+  const tooltipFormatter = useCallback((value: number): string => formatCurrency(value), []);
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
-        <p className="text-lg font-bold text-[#0F172A] tracking-tight">
-          Připravujeme analytický report...
-        </p>
+        <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
+        <p className="text-base font-medium text-[#64748B]">Připravujeme analytický report...</p>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-lg font-bold text-red-600">{error}</p>
+        <p className="text-base font-medium text-red-600">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in pb-12">
+    <div className="space-y-6 animate-in pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-[#0F172A] leading-tight tracking-tight">
-            Obchodní Analytika
-          </h2>
-          <p className="text-sm md:text-base font-medium text-[#475569]">
-            Detailní finanční přehled a výkonnost staveb
-          </p>
+          <h2 className="text-2xl font-bold text-[#0F172A] tracking-tight">Obchodní Analytika</h2>
+          <p className="text-sm text-[#64748B]">Detailní finanční přehled a výkonnost staveb</p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-[#FAFBFC] border border-[#E2E5E9] rounded-xl md:rounded-2xl text-xs md:text-sm font-bold text-[#0F172A] hover:bg-[#F4F6F8] transition-all uppercase tracking-wider md:tracking-widest min-h-[44px]">
-            <Calendar size={18} className="text-[#5B9AAD]" />
-            <span className="hidden sm:inline">Období</span> 2026
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] hover:bg-[#F8FAFC] transition-all">
+            <Calendar size={16} className="text-[#5B9AAD]" />
+            <span>Období 2026</span>
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-[#5B9AAD] text-[#F8FAFC] rounded-xl md:rounded-2xl text-xs md:text-sm font-bold hover:bg-[#4A8A9D] transition-all uppercase tracking-wider md:tracking-widest min-h-[44px]">
-            <FileText size={18} />
-            <span className="hidden sm:inline">Stáhnout</span> PDF
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium hover:bg-[#4A8A9D] transition-all">
+            <FileText size={16} />
+            <span>Stáhnout PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Metriky */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-        <ReportMetric 
-          label="Celkové náklady" 
-          value={formatCurrency(stats?.total_spent ?? 0)} 
-          icon={DollarSign} 
-          trend="+12.4%" 
-        />
-        <ReportMetric 
-          label="Aktivní rozpočty" 
-          value={formatCurrency(stats?.total_budget ?? 0)} 
-          icon={TrendingUp} 
-        />
-        <ReportMetric 
-          label="Počet dodavatelů" 
-          value={supplierData.length.toString()} 
-          icon={PieIcon} 
-        />
-        <ReportMetric 
-          label="Prům. čerpání" 
-          value={`${(stats?.avg_utilization ?? 0).toFixed(1)}%`} 
-          icon={TrendingUp} 
-          trend="-2.1%" 
-          negative 
-        />
+      {/* Metrics - FIXED: Label as title, value below */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <ReportMetric label="Celkové náklady" value={formatCurrency(stats?.total_spent ?? 0)} icon={DollarSign} trend="+12.4%" />
+        <ReportMetric label="Aktivní rozpočty" value={formatCurrency(stats?.total_budget ?? 0)} icon={TrendingUp} />
+        <ReportMetric label="Počet dodavatelů" value={supplierData.length.toString()} icon={PieIcon} />
+        <ReportMetric label="Prům. čerpání" value={`${(stats?.avg_utilization ?? 0).toFixed(1)}%`} icon={TrendingUp} trend="-2.1%" negative />
       </div>
 
-      {/* Grafy */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-        {/* Vývoj finančních toků */}
-        <div className="bg-[#FAFBFC] rounded-xl md:rounded-2xl p-4 md:p-8 border border-[#E2E5E9]">
-          <h3 className="text-lg md:text-xl font-bold text-[#0F172A] mb-6 md:mb-10 tracking-tight">
-            Vývoj finančních toků
-          </h3>
-          <div className="h-[250px] md:h-[350px]">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Area Chart */}
+        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+          <h3 className="text-base font-semibold text-[#0F172A] mb-5">Vývoj finančních toků</h3>
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyAggregated}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.2}/>
                     <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E5E9" vertical={false} />
-                <XAxis 
-                  dataKey="month" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#475569', fontSize: 11, fontWeight: 'bold' }} 
-                  tickFormatter={(val: number) => `${(val / 1000000).toFixed(1)}M`}
-                  width={50}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(val: number) => `${(val / 1000000).toFixed(1)}M`} width={45} />
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#FAFBFC', 
-                    border: '1px solid #E2E5E9', 
-                    borderRadius: '16px', 
-                    fontWeight: 'bold' 
-                  }} 
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
                   formatter={(value: number) => [tooltipFormatter(value), 'Náklady']}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="total" 
-                  stroke="#5B9AAD" 
-                  strokeWidth={3} 
-                  fill="url(#colorValue)" 
-                  animationDuration={1500} 
-                />
+                <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={2.5} fill="url(#colorValue)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Rozpočet vs. Skutečnost */}
-        <div className="bg-[#FAFBFC] rounded-xl md:rounded-2xl p-4 md:p-8 border border-[#E2E5E9]">
-          <h3 className="text-lg md:text-xl font-bold text-[#0F172A] mb-6 md:mb-10 tracking-tight">
-            Rozpočet vs. Skutečnost
-          </h3>
-          <div className="h-[250px] md:h-[350px]">
+        {/* Bar Chart - FIXED: Plán color changed from silver to readable blue-gray */}
+        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+          <h3 className="text-base font-semibold text-[#0F172A] mb-5">Rozpočet vs. Skutečnost</h3>
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetComparison} layout="vertical" margin={{ left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E5E9" horizontal={false} />
+              <BarChart data={budgetComparison} layout="vertical" margin={{ left: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
                 <XAxis type="number" hide />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#0F172A', fontSize: 10, fontWeight: 'bold' }} 
-                  width={80} 
+                  tick={{ fill: '#1E3A5F', fontSize: 11, fontWeight: 500 }} 
+                  width={75} 
                 />
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#FAFBFC', 
-                    border: '1px solid #E2E5E9', 
-                    borderRadius: '16px', 
-                    fontWeight: 'bold' 
-                  }} 
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
                   formatter={(value: number) => tooltipFormatter(value)}
                 />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-                <Bar dataKey="planned" name="Plán" fill="#E2E5E9" radius={[0, 4, 4, 0]} barSize={16} />
-                <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={16} />
+                <Legend 
+                  iconType="circle" 
+                  iconSize={8}
+                  wrapperStyle={{ paddingTop: '16px', fontSize: '12px' }} 
+                />
+                {/* FIXED: Changed from #E2E5E9 (too light) to #94A3B8 (readable) */}
+                <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={14} />
+                <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={14} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Klíčoví subdodavatelé */}
-      <div className="bg-[#FAFBFC] rounded-xl md:rounded-2xl p-4 md:p-8 border border-[#E2E5E9]">
-        <h3 className="text-lg md:text-xl font-bold text-[#0F172A] mb-6 md:mb-8 tracking-tight">
-          Klíčoví subdodavatelé
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
-          <div className="h-[250px] md:h-[300px]">
+      {/* Suppliers */}
+      <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
+        <h3 className="text-base font-semibold text-[#0F172A] mb-5">Klíčoví subdodavatelé</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={supplierData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={5}
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={4}
                   dataKey="value"
                 >
                   {supplierData.map((_, index) => (
@@ -371,35 +264,20 @@ const Reports: React.FC = () => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#FAFBFC', 
-                    border: '1px solid #E2E5E9', 
-                    borderRadius: '16px', 
-                    fontWeight: 'bold' 
-                  }} 
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
                   formatter={(value: number) => tooltipFormatter(value)}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="space-y-3 md:space-y-4">
+          <div className="space-y-3">
             {supplierData.map((s, idx) => (
-              <div 
-                key={s.name} 
-                className="flex items-center justify-between p-3 md:p-4 bg-[#F8F9FA] rounded-xl md:rounded-2xl border border-[#E2E5E9]"
-              >
-                <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0" 
-                    style={{ backgroundColor: COLORS.chart[idx % COLORS.chart.length] }} 
-                  />
-                  <span className="text-sm md:text-base font-bold text-[#0F172A] truncate">
-                    {s.name}
-                  </span>
+              <div key={s.name} className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS.chart[idx % COLORS.chart.length] }} />
+                  <span className="text-sm font-medium text-[#0F172A] truncate">{s.name}</span>
                 </div>
-                <span className="text-sm md:text-base font-bold text-[#5B9AAD] flex-shrink-0 ml-2">
-                  {formatCurrency(s.value)}
-                </span>
+                <span className="text-sm font-semibold text-[#5B9AAD] shrink-0 ml-2 tabular-nums">{formatCurrency(s.value)}</span>
               </div>
             ))}
           </div>
@@ -409,10 +287,6 @@ const Reports: React.FC = () => {
   );
 };
 
-// ============================================
-// POMOCNÁ KOMPONENTA
-// ============================================
-
 interface ReportMetricProps {
   label: string;
   value: string;
@@ -421,35 +295,22 @@ interface ReportMetricProps {
   negative?: boolean;
 }
 
-const ReportMetric: React.FC<ReportMetricProps> = ({ 
-  label, 
-  value, 
-  icon: Icon, 
-  trend, 
-  negative 
-}) => (
-  <div className="bg-[#FAFBFC] p-4 md:p-6 rounded-xl md:rounded-2xl border border-[#E2E5E9] space-y-3 md:space-y-4">
-    <div className="flex items-center justify-between">
-      <div className="w-10 h-10 md:w-12 md:h-12 bg-[#F0F7F9] text-[#5B9AAD] rounded-xl md:rounded-2xl flex items-center justify-center">
+/* FIXED: Label as title (larger), value below (even larger) */
+const ReportMetric: React.FC<ReportMetricProps> = ({ label, value, icon: Icon, trend, negative }) => (
+  <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0]">
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-10 h-10 bg-[#F0F9FF] text-[#5B9AAD] rounded-xl flex items-center justify-center">
         <Icon size={20} />
       </div>
       {trend && (
-        <span 
-          className={`text-xs font-bold px-2 py-1 rounded-lg ${
-            negative ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
-          }`}
-        >
+        <span className={`text-xs font-semibold px-2 py-1 rounded-lg ${negative ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
           {trend}
         </span>
       )}
     </div>
     <div>
-      <p className="text-[10px] md:text-xs font-bold text-[#5C6878] uppercase tracking-wider md:tracking-widest mb-1">
-        {label}
-      </p>
-      <h4 className="text-base md:text-xl font-bold text-[#0F172A] truncate" title={value}>
-        {value}
-      </h4>
+      <p className="text-sm font-semibold text-[#475569] mb-1">{label}</p>
+      <h4 className="text-xl font-bold text-[#0F172A] tabular-nums">{value}</h4>
     </div>
   </div>
 );
