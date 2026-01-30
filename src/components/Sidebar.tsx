@@ -6,29 +6,6 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-const SidebarItem: React.FC<{
-  to: string;
-  icon: React.ElementType;
-  label: string;
-}> = ({ to, icon: Icon, label }) => (
-  <li>
-    <NavLink
-      to={to}
-      className={({ isActive }) => `
-        flex items-center gap-3.5 px-4 py-3.5 mx-2 rounded-xl transition-all duration-200
-        ${isActive 
-          ? 'bg-[#5B9AAD] text-white shadow-sm' 
-          : 'text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
-        }
-      `}
-    >
-      <Icon size={22} className="shrink-0" aria-hidden="true" />
-      {/* VĚTŠÍ písmo 16px (text-base) a font-semibold */}
-      <span className="text-base font-semibold">{label}</span>
-    </NavLink>
-  </li>
-);
-
 const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   const handleLogoutClick = () => {
     if (onLogout) {
@@ -39,9 +16,17 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     }
   };
 
+  const navLinkClass = ({ isActive }: { isActive: boolean }) => `
+    flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+    ${isActive 
+      ? 'bg-[#5B9AAD] text-white shadow-sm' 
+      : 'text-[#334155] hover:bg-[#F1F5F9] hover:text-[#0F172A]'
+    }
+  `;
+
   return (
     <nav 
-      className="fixed left-0 top-0 bottom-0 bg-white hidden md:flex flex-col z-50 w-[15rem] border-r border-[#E2E8F0]" 
+      className="fixed left-0 top-0 bottom-0 bg-white hidden md:flex flex-col z-50 w-60 border-r border-[#E2E8F0]" 
       role="navigation" 
       aria-label="Hlavní navigace"
     >
@@ -56,24 +41,27 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
       </div>
 
       {/* Navigation Items */}
-      <ul className="flex-1 py-4 space-y-1 overflow-y-auto">
-        <SidebarItem to="/" icon={Home} label="Přehled" />
-        <SidebarItem to="/projects" icon={Folder} label="Projekty" />
-        <SidebarItem to="/invoices" icon={FileText} label="Faktury" />
-        <SidebarItem to="/reports" icon={BarChart3} label="Reporty" />
-        <SidebarItem to="/admin" icon={Users} label="Administrace" />
+      <ul className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        <li><NavLink to="/" className={navLinkClass}><Home size={20} /><span className="text-[15px] font-semibold">Přehled</span></NavLink></li>
+        <li><NavLink to="/projects" className={navLinkClass}><Folder size={20} /><span className="text-[15px] font-semibold">Projekty</span></NavLink></li>
+        <li><NavLink to="/invoices" className={navLinkClass}><FileText size={20} /><span className="text-[15px] font-semibold">Faktury</span></NavLink></li>
+        <li><NavLink to="/reports" className={navLinkClass}><BarChart3 size={20} /><span className="text-[15px] font-semibold">Reporty</span></NavLink></li>
+        <li><NavLink to="/admin" className={navLinkClass}><Users size={20} /><span className="text-[15px] font-semibold">Administrace</span></NavLink></li>
       </ul>
 
-      {/* Bottom Section */}
-      <div className="p-2 border-t border-[#F1F5F9] space-y-1">
-        <SidebarItem to="/settings" icon={Settings} label="Nastavení" />
+      {/* Bottom Section - STEJNÝ PADDING px-3 jako horní část */}
+      <div className="px-3 py-3 border-t border-[#F1F5F9] space-y-1">
+        <NavLink to="/settings" className={navLinkClass}>
+          <Settings size={20} />
+          <span className="text-[15px] font-semibold">Nastavení</span>
+        </NavLink>
+        
         <button
           onClick={handleLogoutClick}
-          className="w-full flex items-center gap-3.5 px-4 py-3.5 mx-2 rounded-xl text-[#DC2626] hover:bg-[#FEF2F2] transition-all duration-200"
-          style={{ width: 'calc(100% - 1rem)' }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#DC2626] hover:bg-[#FEF2F2] transition-all duration-200"
         >
-          <LogOut size={22} className="shrink-0" aria-hidden="true" />
-          <span className="text-base font-semibold">Odhlásit se</span>
+          <LogOut size={20} />
+          <span className="text-[15px] font-semibold">Odhlásit se</span>
         </button>
       </div>
     </nav>
