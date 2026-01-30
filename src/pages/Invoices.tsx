@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Clock, CheckCircle2, AlertCircle, Search, Download, Loader2, ChevronDown, Filter } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, Search, Download, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Invoice } from '../types';
 import { formatCurrency, formatDate } from '../constants';
 
+const ITEMS_PER_PAGE = 50;
+
 /**
- * UNIFIED StatCard - 2026 Enterprise SaaS
- * Font-weight: minimum 500
- * Gestalt: Proximity - icon grouped with content
+ * UNIFIED StatCard - 2026 Enterprise SaaS Daniel VIlim
  */
 const InvoiceStatCard: React.FC<{
   label: string;
@@ -41,7 +41,7 @@ const InvoiceStatCard: React.FC<{
 };
 
 /**
- * StatusBadge - Správné badges s border
+ * StatusBadge
  */
 const StatusBadge: React.FC<{ status: Invoice['payment_status'] }> = ({ status }) => {
   const styles = {
@@ -61,11 +61,8 @@ const StatusBadge: React.FC<{ status: Invoice['payment_status'] }> = ({ status }
 /**
  * InvoiceCard - Mobile card view
  */
-const InvoiceCard: React.FC<{ invoice: Invoice; onClick: () => void }> = ({ invoice, onClick }) => (
-  <div 
-    onClick={onClick}
-    className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all cursor-pointer"
-  >
+const InvoiceCard: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
+  <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-sm">
     <div className="flex items-start justify-between gap-3 mb-3">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-[#0F172A] truncate">{invoice.invoice_number}</p>
@@ -98,36 +95,78 @@ const Invoices: React.FC = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
+  // Initial fetch
   useEffect(() => {
-    async function fetchInvoices() {
-      try {
-        setLoading(true);
-        const { data } = await supabase
-          .from('project_invoices')
-          .select('*')
-          .not('project_id', 'is', null)
-          .order('date_issue', { ascending: false })
-          .limit(100);
-        
-        setInvoices(data || []);
-      } catch (err) {
-        console.error('Error fetching invoices:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchInvoices();
+    fetchInvoices(true);
   }, []);
+
+  const fetchInvoices = async (reset: boolean = false) => {
+    try {
+      if (reset) {
+        setLoading(true);
+        setOffset(0);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const currentOffset = reset ? 0 : offset;
+
+      // Get count first
+      if (reset) {
+        const { count } = await supabase
+          .from('project_invoices')
+          .select('*', { count: 'exact', head: true })
+          .not('project_id', 'is', null);
+        setTotalCount(count || 0);
+      }
+
+      const { data, error } = await supabase
+        .from('project_invoices')
+        .select('*')
+        .not('project_id', 'is', null)
+        .order('date_issue', { ascending: false })
+        .range(currentOffset, currentOffset + ITEMS_PER_PAGE - 1);
+
+      if (error) throw error;
+
+      const newInvoices = data || [];
+      
+      if (reset) {
+        setInvoices(newInvoices);
+      } else {
+        setInvoices(prev => [...prev, ...newInvoices]);
+      }
+
+      setHasMore(newInvoices.length === ITEMS_PER_PAGE);
+      setOffset(currentOffset + newInvoices.length);
+
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchInvoices(false);
+    }
+  };
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
       const matchesSearch = 
         inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inv.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        (inv.project_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (inv.supplier_name || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesFilter = filter === 'all' || inv.payment_status === filter;
       
@@ -157,7 +196,9 @@ const Invoices: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Faktury</h1>
-          <p className="text-sm font-medium text-[#64748B] mt-1">Přehled všech faktur v systému</p>
+          <p className="text-sm font-medium text-[#64748B] mt-1">
+            Celkem {totalCount.toLocaleString('cs-CZ')} faktur v systému
+          </p>
         </div>
         <button className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm w-full sm:w-auto">
           <Download size={18} />
@@ -198,7 +239,6 @@ const Invoices: React.FC = () => {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
           <input
@@ -210,7 +250,6 @@ const Invoices: React.FC = () => {
           />
         </div>
         
-        {/* Filter dropdown */}
         <div className="relative">
           <select
             value={filter}
@@ -236,12 +275,8 @@ const Invoices: React.FC = () => {
               <p className="text-sm font-semibold text-[#64748B]">Žádné faktury nenalezeny</p>
             </div>
           ) : (
-            filteredInvoices.slice(0, 20).map((inv) => (
-              <InvoiceCard 
-                key={inv.id} 
-                invoice={inv} 
-                onClick={() => navigate(`/invoices/${inv.id}`)}
-              />
+            filteredInvoices.map((inv) => (
+              <InvoiceCard key={inv.id} invoice={inv} />
             ))
           )}
         </div>
@@ -267,12 +302,8 @@ const Invoices: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.slice(0, 50).map((inv) => (
-                  <tr 
-                    key={inv.id} 
-                    onClick={() => navigate(`/invoices/${inv.id}`)}
-                    className="hover:bg-[#FAFBFC] transition-colors cursor-pointer"
-                  >
+                filteredInvoices.map((inv) => (
+                  <tr key={inv.id} className="hover:bg-[#FAFBFC] transition-colors">
                     <td className="px-5 py-4 text-sm font-bold text-[#0F172A]">{inv.invoice_number}</td>
                     <td className="px-5 py-4 text-sm font-medium text-[#334155]">{inv.project_name}</td>
                     <td className="px-5 py-4 text-sm font-medium text-[#64748B]">{inv.supplier_name}</td>
@@ -290,14 +321,31 @@ const Invoices: React.FC = () => {
           </table>
         </div>
         
-        {/* Footer with count */}
-        {filteredInvoices.length > 0 && (
-          <div className="px-5 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0]">
+        {/* Footer with count + Load More */}
+        <div className="px-5 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm font-medium text-[#64748B]">
-              Zobrazeno {Math.min(filteredInvoices.length, 50)} z {filteredInvoices.length} faktur
+              Zobrazeno <span className="font-bold text-[#0F172A]">{filteredInvoices.length}</span> z <span className="font-bold text-[#0F172A]">{totalCount.toLocaleString('cs-CZ')}</span> faktur
             </p>
+            
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="flex items-center justify-center gap-2 h-10 px-5 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] hover:border-[#5B9AAD] transition-all disabled:opacity-50 w-full sm:w-auto"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Načítání...</span>
+                  </>
+                ) : (
+                  <span>Načíst dalších {ITEMS_PER_PAGE}</span>
+                )}
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
