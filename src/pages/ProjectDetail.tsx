@@ -17,6 +17,40 @@ import BudgetHistory from '../components/BudgetHistory';
 
 type TabType = 'overview' | 'history' | 'documents';
 
+/**
+ * UNIFIED StatCard pro ProjectDetail
+ * Label: 1.125rem (18px), font-semibold (600) - NADPIS
+ * Value: 1rem (16px), font-medium (500) - DATA
+ */
+const StatCard: React.FC<{ 
+  label: string; 
+  value: string; 
+  icon: React.ElementType; 
+  isWarning?: boolean; 
+  subValue?: string 
+}> = ({ label, value, icon: Icon, isWarning, subValue }) => (
+  <div className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all ${isWarning ? 'border-[#FECACA] bg-[#FEF2F2]' : 'border-[#E2E8F0]'}`}>
+    <div className="flex items-center justify-between mb-3">
+      {/* Label - NADPIS: větší */}
+      <h4 className={`text-[1.125rem] font-semibold leading-tight ${isWarning ? 'text-[#DC2626]' : 'text-[#1E293B]'}`}>
+        {label}
+      </h4>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors shrink-0 ml-2 ${
+        isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F9FF] text-[#5B9AAD]'
+      }`}>
+        <Icon size={18} aria-hidden="true" />
+      </div>
+    </div>
+    <div>
+      {/* Value - DATA: menší */}
+      <p className={`text-base font-medium tabular-nums ${isWarning ? 'text-[#DC2626]' : 'text-[#64748B]'}`}>
+        {value}
+      </p>
+      {subValue && <p className="text-xs text-[#94A3B8] mt-1">{subValue}</p>}
+    </div>
+  </div>
+);
+
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { profile, isAdmin } = useAuth();
@@ -107,30 +141,18 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in pb-12">
-      {/* Breadcrumbs - FIXED: single line, proper alignment */}
-      <nav 
-        className="flex items-center gap-2 text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link 
-          to="/" 
-          className="flex items-center gap-1.5 text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap"
-        >
+      {/* Breadcrumbs */}
+      <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <Link to="/" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap">
           <Home size={14} aria-hidden="true" />
           <span>Přehled</span>
         </Link>
         <ChevronRight size={14} className="text-[#CBD5E1] shrink-0" aria-hidden="true" />
-        <Link 
-          to="/projects" 
-          className="text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap"
-        >
+        <Link to="/projects" className="text-[#64748B] hover:text-[#5B9AAD] transition-colors whitespace-nowrap">
           Projekty
         </Link>
         <ChevronRight size={14} className="text-[#CBD5E1] shrink-0" aria-hidden="true" />
-        <span 
-          className="text-[#1E3A5F] font-semibold truncate max-w-[300px]"
-          title={project.name}
-        >
+        <span className="text-[#1E3A5F] font-semibold truncate max-w-[200px] sm:max-w-[300px]" title={project.name}>
           {project.name}
         </span>
       </nav>
@@ -149,10 +171,7 @@ const ProjectDetail: React.FC = () => {
               {project.status === 'active' ? 'Ve výstavbě' : project.status === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
             </span>
           </div>
-          <h1 
-            className="font-bold text-[#0F172A] tracking-tight"
-            style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)' }}
-          >
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
             {project.name}
           </h1>
           <div className="flex items-center gap-4 text-sm text-[#64748B] flex-wrap">
@@ -167,7 +186,7 @@ const ProjectDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Switcher - CONSISTENT SIZE */}
+        {/* Tab Switcher */}
         <div className="flex p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] w-full lg:w-auto">
           <TabButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Přehled" />
           <TabButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={History} label="Audit Log" />
@@ -177,13 +196,13 @@ const ProjectDetail: React.FC = () => {
 
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-in">
-          {/* Stats Grid - FIXED HIERARCHY: label as title on top */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Stats Grid - UNIFIED */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Budget Card with Edit */}
-            <div className={`bg-white rounded-2xl p-5 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-4 ring-[#5B9AAD]/10' : 'border-[#E2E8F0]'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-[#475569]">Smluvní rozpočet</span>
-                <div className="flex items-center gap-1">
+            <div className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all ${isEditingBudget ? 'border-[#5B9AAD] ring-4 ring-[#5B9AAD]/10' : 'border-[#E2E8F0]'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[1.125rem] font-semibold text-[#1E293B] leading-tight">Smluvní rozpočet</h4>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
                   {isAdmin && !isEditingBudget && (
                     <button 
                       onClick={() => setIsEditingBudget(true)} 
@@ -205,27 +224,27 @@ const ProjectDetail: React.FC = () => {
                     type="number"
                     value={budgetValue}
                     onChange={(e) => setBudgetValue(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-lg text-[#0F172A] font-bold focus:outline-none focus:border-[#5B9AAD] transition-all tabular-nums"
+                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-base text-[#0F172A] font-medium focus:outline-none focus:border-[#5B9AAD] transition-all tabular-nums"
                     aria-label="Nová hodnota rozpočtu"
                   />
                   <textarea
                     value={budgetReason}
                     onChange={(e) => setBudgetReason(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all min-h-[70px] resize-none"
-                    placeholder="Důvod úpravy rozpočtu..."
+                    className="w-full px-3 py-2 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all min-h-[60px] resize-none"
+                    placeholder="Důvod úpravy..."
                     aria-label="Důvod změny"
                   />
                   <div className="flex gap-2">
                     <button 
                       onClick={() => { setIsEditingBudget(false); setBudgetValue(project.planned_budget); setBudgetReason(''); }} 
-                      className="flex-1 py-2.5 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-sm font-medium hover:bg-[#F8FAFC]"
+                      className="flex-1 py-2 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-sm font-medium hover:bg-[#F8FAFC]"
                     >
                       Zrušit
                     </button>
                     <button 
                       onClick={handleSaveBudget} 
                       disabled={isSavingBudget} 
-                      className="flex-1 py-2.5 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#4A8A9D]"
+                      className="flex-1 py-2 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-[#4A8A9D]"
                     >
                       {isSavingBudget ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                       Uložit
@@ -234,9 +253,9 @@ const ProjectDetail: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h3 className="text-2xl font-bold tracking-tight text-[#0F172A] tabular-nums">
+                  <p className="text-base font-medium text-[#64748B] tabular-nums">
                     {formatCurrency(project.planned_budget)}
-                  </h3>
+                  </p>
                   <p className="text-xs text-[#5B9AAD] font-medium flex items-center gap-1 mt-1">
                     <ShieldCheck size={12} aria-hidden="true" />
                     Schváleno investorem
@@ -261,7 +280,7 @@ const ProjectDetail: React.FC = () => {
           </div>
 
           {/* Chart */}
-          <div className="bg-white rounded-2xl p-5 md:p-6 border border-[#E2E8F0]">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#E2E8F0]">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
               <h3 className="text-base font-semibold text-[#0F172A]">Finanční progres stavby</h3>
               <div className="flex items-center gap-4">
@@ -275,7 +294,7 @@ const ProjectDetail: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="h-[300px] md:h-[350px]">
+            <div className="h-[280px] sm:h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
@@ -285,43 +304,14 @@ const ProjectDetail: React.FC = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#64748B', fontSize: 11 }} 
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#64748B', fontSize: 11 }} 
-                    tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} 
-                  />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} />
                   <Tooltip 
-                    contentStyle={{ 
-                      borderRadius: '12px', 
-                      border: '1px solid #E2E8F0', 
-                      backgroundColor: 'white', 
-                      fontSize: '13px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                    }} 
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: 'white', fontSize: '13px' }} 
                     formatter={(val: number) => [formatCurrency(val), 'Náklady']}
                   />
-                  <ReferenceLine 
-                    y={project.planned_budget} 
-                    stroke="#DC2626" 
-                    strokeDasharray="6 4" 
-                    strokeWidth={2}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="total" 
-                    stroke="#5B9AAD" 
-                    strokeWidth={3} 
-                    fillOpacity={1} 
-                    fill="url(#colorTotal)" 
-                    animationDuration={1000} 
-                  />
+                  <ReferenceLine y={project.planned_budget} stroke="#DC2626" strokeDasharray="6 4" strokeWidth={2} />
+                  <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTotal)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -330,7 +320,7 @@ const ProjectDetail: React.FC = () => {
       )}
 
       {activeTab === 'history' && (
-        <div className="bg-white rounded-2xl p-5 md:p-6 border border-[#E2E8F0] animate-in">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#E2E8F0] animate-in">
           <BudgetHistory projectId={id!} />
         </div>
       )}
@@ -339,14 +329,11 @@ const ProjectDetail: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in">
           <DocumentCard title="Projektová dokumentace" count={12} lastUpdate="včera" icon={FileText} />
           <DocumentCard title="Smlouvy a dodatky" count={4} lastUpdate="před 3 dny" icon={ShieldCheck} />
-          <DocumentCard title="Stavební deník (Digitální)" count={86} lastUpdate="dnes v 08:30" icon={Check} />
-          <div className="lg:col-span-3 py-12 text-center bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] border-dashed">
+          <DocumentCard title="Stavební deník" count={86} lastUpdate="dnes v 08:30" icon={Check} />
+          <div className="lg:col-span-3 py-10 text-center bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] border-dashed">
             <p className="text-xs font-medium text-[#64748B] uppercase tracking-wider mb-1">Správa souborů</p>
-            <p className="text-sm text-[#0F172A] mb-5">Modul pro nahrávání dokumentace bude dostupný ve verzi 2.1</p>
-            <button 
-              disabled 
-              className="px-5 py-2.5 bg-[#E2E8F0] text-[#94A3B8] rounded-xl text-sm font-medium cursor-not-allowed"
-            >
+            <p className="text-sm text-[#0F172A] mb-4">Modul pro nahrávání dokumentace bude dostupný ve verzi 2.1</p>
+            <button disabled className="px-4 py-2 bg-[#E2E8F0] text-[#94A3B8] rounded-xl text-sm font-medium cursor-not-allowed">
               Nahrát dokument
             </button>
           </div>
@@ -361,29 +348,13 @@ const ProjectDetail: React.FC = () => {
 const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ElementType; label: string }> = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center justify-center gap-2 h-11 px-4 rounded-lg text-sm font-medium transition-all flex-1 lg:flex-none ${
+    className={`flex items-center justify-center gap-2 h-10 sm:h-11 px-3 sm:px-4 rounded-lg text-sm font-medium transition-all flex-1 lg:flex-none ${
       active ? 'bg-[#5B9AAD] text-white' : 'text-[#64748B] hover:bg-[#E2E8F0]/50'
     }`}
   >
     <Icon size={16} aria-hidden="true" />
     <span className="hidden sm:inline">{label}</span>
   </button>
-);
-
-/* FIXED: Label is now title-sized, value below is larger */
-const StatCard: React.FC<{ label: string; value: string; icon: React.ElementType; isWarning?: boolean; subValue?: string }> = ({ label, value, icon: Icon, isWarning, subValue }) => (
-  <div className={`bg-white rounded-2xl p-5 border transition-all ${isWarning ? 'border-[#FECACA] bg-[#FEF2F2]' : 'border-[#E2E8F0]'}`}>
-    <div className="flex items-center justify-between mb-4">
-      <span className={`text-sm font-semibold ${isWarning ? 'text-[#DC2626]' : 'text-[#475569]'}`}>{label}</span>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isWarning ? 'bg-[#DC2626] text-white' : 'bg-[#F0F9FF] text-[#5B9AAD]'}`}>
-        <Icon size={18} aria-hidden="true" />
-      </div>
-    </div>
-    <div>
-      <h3 className={`text-2xl font-bold tracking-tight tabular-nums ${isWarning ? 'text-[#DC2626]' : 'text-[#0F172A]'}`}>{value}</h3>
-      {subValue && <p className="text-xs text-[#64748B] mt-1">{subValue}</p>}
-    </div>
-  </div>
 );
 
 const DocumentCard: React.FC<{ title: string; count: number; lastUpdate: string; icon: React.ElementType }> = ({ title, count, lastUpdate, icon: Icon }) => (
