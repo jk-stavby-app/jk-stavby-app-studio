@@ -19,6 +19,9 @@ const Reports = lazy(() => import('./pages/Reports'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Admin = lazy(() => import('./pages/Admin'));
 
+/**
+ * PageLoader - Loading spinner for lazy loaded pages
+ */
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
     <div className="flex flex-col items-center gap-4">
@@ -28,6 +31,9 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
+/**
+ * FullPageLoader - Full screen loading state
+ */
 const FullPageLoader: React.FC<{ message?: string }> = ({ message = 'Načítání...' }) => (
   <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
     <div className="flex flex-col items-center gap-4">
@@ -37,31 +43,29 @@ const FullPageLoader: React.FC<{ message?: string }> = ({ message = 'Načítán�
   </div>
 );
 
+/**
+ * Layout - Main app layout with sidebar, header, and content area
+ */
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Sidebar - desktop only */}
       <Sidebar />
-      
-      {/* Main content area - offset by sidebar width on desktop */}
       <div className="lg:ml-[260px] flex flex-col min-h-screen">
-        {/* Header */}
         <Header />
-        
-        {/* Main content - offset by header height */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-[88px] lg:pt-[96px] pb-24 lg:pb-8">
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>
         </main>
       </div>
-      
-      {/* Bottom nav - mobile only */}
       <BottomNav />
     </div>
   );
 };
 
+/**
+ * ProtectedRoute - Wrapper for authenticated routes
+ */
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
 
@@ -76,6 +80,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <Layout>{children}</Layout>;
 };
 
+/**
+ * App - Main application component
+ */
 const App: React.FC = () => {
   const { user, isLoading } = useAuth();
 
@@ -86,11 +93,9 @@ const App: React.FC = () => {
   return (
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
-        {/* Public routes */}
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPassword />} />
         
-        {/* Protected routes */}
         <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
@@ -99,7 +104,6 @@ const App: React.FC = () => {
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         
-        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
