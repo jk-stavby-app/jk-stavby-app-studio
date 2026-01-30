@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { FileText, Clock, CheckCircle2, AlertCircle, Search, Download, Loader2, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Invoice } from '../types';
@@ -8,7 +7,7 @@ import { formatCurrency, formatDate } from '../constants';
 const ITEMS_PER_PAGE = 50;
 
 /**
- * UNIFIED StatCard - 2026 Enterprise SaaS Daniel VIlim
+ * UNIFIED StatCard - 2026 Enterprise SaaS Daniel Vilim
  */
 const InvoiceStatCard: React.FC<{
   label: string;
@@ -92,7 +91,6 @@ const InvoiceCard: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
 );
 
 const Invoices: React.FC = () => {
-  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -181,6 +179,46 @@ const Invoices: React.FC = () => {
     overdue: { count: invoices.filter(i => i.payment_status === 'overdue').length, amount: invoices.filter(i => i.payment_status === 'overdue').reduce((s, i) => s + i.total_amount, 0) },
   }), [invoices]);
 
+  /**
+   * Export CSV - s českými znaky (BOM)
+   */
+  const handleExportCSV = () => {
+    if (filteredInvoices.length === 0) return;
+
+    // CSV headers
+    const headers = ['Číslo faktury', 'Projekt', 'Dodavatel', 'Datum vystavení', 'Částka', 'Status'];
+    
+    // CSV rows
+    const rows = filteredInvoices.map(inv => [
+      inv.invoice_number,
+      inv.project_name || '',
+      inv.supplier_name || '',
+      formatDate(inv.date_issue),
+      inv.total_amount.toString(),
+      inv.payment_status === 'paid' ? 'Zaplaceno' : inv.payment_status === 'pending' ? 'Čekající' : 'Po splatnosti'
+    ]);
+
+    // Combine headers and rows with semicolon separator (Excel friendly)
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+
+    // Add BOM for Czech characters in Excel
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `faktury-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -200,9 +238,13 @@ const Invoices: React.FC = () => {
             Celkem {totalCount.toLocaleString('cs-CZ')} faktur v systému
           </p>
         </div>
-        <button className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm w-full sm:w-auto">
+        <button 
+          onClick={handleExportCSV}
+          disabled={filteredInvoices.length === 0}
+          className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <Download size={18} />
-          <span>Export CSV</span>
+          <span>Export CSV ({filteredInvoices.length})</span>
         </button>
       </div>
 
@@ -253,7 +295,7 @@ const Invoices: React.FC = () => {
         <div className="relative">
           <select
             value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
+            onChange={(e) => setFilter(e.target.value as 'all' | 'paid' | 'pending' | 'overdue')}
             className="h-11 pl-4 pr-10 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer min-w-[160px]"
           >
             <option value="all">Všechny statusy</option>
