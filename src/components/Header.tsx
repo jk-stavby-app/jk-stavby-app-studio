@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, X, LayoutDashboard, FolderKanban, FileText, BarChart3, 
-  Settings, LogOut, Bell, Search, ChevronRight, HelpCircle
+  Settings, LogOut, Bell, Search, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -142,14 +142,6 @@ const Header: React.FC = () => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
             </button>
 
-            {/* Help - Desktop only */}
-            <button 
-              className="hidden sm:flex p-2.5 rounded-xl text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-all"
-              aria-label="Nápověda"
-            >
-              <HelpCircle size={20} strokeWidth={2} />
-            </button>
-
             {/* User Profile - Desktop */}
             <div 
               onClick={() => navigate('/admin')}
@@ -264,12 +256,6 @@ const Header: React.FC = () => {
               </p>
             </div>
           </div>
-
-          {/* Help */}
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-[#64748B] hover:bg-[#F1F5F9] transition-all">
-            <HelpCircle size={22} strokeWidth={2} />
-            <span>Nápověda</span>
-          </button>
 
           {/* Logout */}
           <button 
