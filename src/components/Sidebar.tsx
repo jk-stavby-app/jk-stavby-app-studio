@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, FolderKanban, FileText, BarChart3, Settings, 
-  LogOut, HelpCircle, ChevronRight
+  LogOut, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -95,13 +95,7 @@ const Sidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="px-3 py-4 border-t border-[#E2E8F0] space-y-1">
-        {/* Help */}
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-all">
-          <HelpCircle size={20} strokeWidth={2} className="text-[#94A3B8]" />
-          <span>Nápověda</span>
-        </button>
-
+      <div className="px-3 py-4 border-t border-[#E2E8F0] space-y-2">
         {/* User Profile */}
         <div className="flex items-center gap-3 px-4 py-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#E1EFF3] to-[#D1E5EB] text-[#3A6A7D] flex items-center justify-center font-bold text-sm border border-[#5B9AAD]/20">
