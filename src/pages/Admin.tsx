@@ -53,7 +53,7 @@ const Admin: React.FC = () => {
       setFormData({
         full_name: user.full_name || '',
         email: user.email,
-        password: '', // Always empty for edit
+        password: '',
         role: user.role,
         is_active: user.is_active,
         phone: user.phone || '',
@@ -162,138 +162,156 @@ const Admin: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div className="space-y-6 animate-in pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#0F172A] leading-tight">Správa uživatelů</h2>
-          <p className="text-base text-[#475569] font-medium leading-relaxed">Správa přístupů a oprávnění v systému JK Stavby</p>
+          <h2 className="text-2xl font-bold text-[#0F172A] tracking-tight">Správa uživatelů</h2>
+          <p className="text-sm text-[#64748B]">Správa přístupů a oprávnění v systému JK Stavby</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="px-6 py-3 min-h-[44px] bg-[#5B9AAD] text-[#F8FAFC] rounded-xl font-medium text-base hover:bg-[#4A8A9D] transition-colors flex items-center justify-center gap-2 w-full md:w-auto active:scale-[0.98] leading-relaxed"
+          className="flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all w-full sm:w-auto"
         >
-          <Plus size={20} aria-hidden="true" />
+          <Plus size={18} />
           <span>Přidat uživatele</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9]">
+      {/* Stats Grid - UNIFIED */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Celkem uživatelů */}
+        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#475569] font-medium leading-normal">Celkem uživatelů</span>
-            <div className="w-10 h-10 bg-[#F0F7F9] rounded-xl flex items-center justify-center">
-              <Users size={20} className="text-[#5B9AAD]" aria-hidden="true" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#F0F9FF] rounded-xl flex items-center justify-center">
+              <Users size={18} className="text-[#5B9AAD]" />
             </div>
           </div>
-          <p className="text-3xl font-semibold text-[#0F172A] tracking-tight">{stats.total}</p>
+          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
+            Celkem uživatelů
+          </h4>
+          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.total}</p>
         </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9]">
+
+        {/* Aktivní přístup */}
+        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#475569] font-medium leading-normal">Aktivní přístup</span>
-            <div className="w-10 h-10 bg-[#ECFDF5] rounded-xl flex items-center justify-center">
-              <UserCheck size={20} className="text-[#059669]" aria-hidden="true" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#D1FAE5] rounded-xl flex items-center justify-center">
+              <UserCheck size={18} className="text-[#059669]" />
             </div>
           </div>
-          <p className="text-3xl font-semibold text-[#0F172A] tracking-tight">{stats.active}</p>
+          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
+            Aktivní přístup
+          </h4>
+          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.active}</p>
         </div>
-        <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9]">
+
+        {/* Administrátoři */}
+        <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-[#475569] font-medium leading-normal">Administrátoři</span>
-            <div className="w-10 h-10 bg-[#FEF9EE] rounded-xl flex items-center justify-center">
-              <Shield size={20} className="text-[#D97706]" aria-hidden="true" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
+              <Shield size={18} className="text-[#D97706]" />
             </div>
           </div>
-          <p className="text-3xl font-semibold text-[#0F172A] tracking-tight">{stats.admins}</p>
+          <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">
+            Administrátoři
+          </h4>
+          <p className="text-base font-medium text-[#475569] tabular-nums">{stats.admins}</p>
         </div>
       </div>
 
+      {/* Search */}
       <div className="relative w-full">
         <label htmlFor="search-users" className="sr-only">Hledat uživatele</label>
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#475569]" size={18} aria-hidden="true" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" size={18} />
         <input
           id="search-users"
           type="text"
           placeholder="Dle jména nebo e-mailu..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 min-h-[44px] bg-[#FAFBFC] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] placeholder-[#5C6878] focus:outline-none focus:border-[#5B9AAD] transition-all font-medium"
+          className="w-full pl-12 pr-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] transition-all"
         />
       </div>
 
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E5E9] overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
-            <p className="text-base font-medium text-[#475569] leading-relaxed">Načítání seznamu...</p>
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
+            <p className="text-sm font-medium text-[#64748B]">Načítání seznamu...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[900px]" role="table">
-              <thead className="bg-[#F4F6F8] border-b border-[#E2E5E9]">
+            <table className="w-full text-left min-w-[800px]">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-[#475569]">Uživatel</th>
-                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-[#475569]">Role</th>
-                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-[#475569]">Stav</th>
-                  <th scope="col" className="px-6 py-4 text-sm font-semibold text-[#475569]">Poslední přihlášení</th>
-                  <th scope="col" className="px-6 py-4 text-right text-sm font-semibold text-[#475569]">Akce</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Uživatel</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Role</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Stav</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Poslední přihlášení</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-[#64748B]">Akce</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E5E9]">
+              <tbody className="divide-y divide-[#F1F5F9]">
                 {filteredUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-[#F8F9FA] transition-colors border-b border-[#E2E5E9]">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#E1EFF3] text-[#3A6A7D] flex items-center justify-center font-bold border border-[#5B9AAD]/10">
-                          {u.full_name ? u.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <Users size={18} />}
+                  <tr key={u.id} className="hover:bg-[#FAFBFC] transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#E1EFF3] text-[#3A6A7D] flex items-center justify-center font-bold text-sm">
+                          {u.full_name ? u.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <Users size={16} />}
                         </div>
                         <div>
-                          <p className="text-base font-semibold text-[#0F172A] leading-relaxed">{u.full_name || 'Nezadáno'}</p>
-                          <p className="text-base text-[#475569] leading-relaxed">{u.email}</p>
+                          <p className="text-sm font-semibold text-[#0F172A]">{u.full_name || 'Nezadáno'}</p>
+                          <p className="text-xs text-[#64748B]">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                    <td className="px-5 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
                         u.role === 'admin' 
-                        ? 'bg-[#FEF2F2] text-[#DC2626]' 
-                        : 'bg-[#F1F5F9] text-[#475569]'
+                          ? 'bg-[#FEE2E2] text-[#DC2626]' 
+                          : 'bg-[#F1F5F9] text-[#64748B]'
                       }`}>
                         {u.role === 'admin' ? 'administrátor' : 'uživatel'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
+                    <td className="px-5 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
                         u.is_active 
-                        ? 'bg-[#ECFDF5] text-[#059669]' 
-                        : 'bg-[#F1F5F9] text-[#475569]'
+                          ? 'bg-[#ECFDF5] text-[#059669]' 
+                          : 'bg-[#F1F5F9] text-[#64748B]'
                       }`}>
                         {u.is_active ? 'aktivní' : 'deaktivován'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-base text-[#475569] leading-relaxed">
+                    <td className="px-5 py-4 text-sm text-[#64748B]">
                       {u.last_login 
-                        ? new Date(u.last_login).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
+                        ? new Date(u.last_login).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
                         : 'Nikdy'}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <button 
                           onClick={() => handleOpenModal(u)}
-                          className="p-2 min-h-[40px] min-w-[40px] text-[#475569] rounded-xl font-medium hover:bg-[#F4F6F8] hover:text-[#0F172A] transition-colors"
+                          className="p-2 text-[#64748B] rounded-lg hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
                           aria-label="Upravit uživatele"
                         >
-                          <Pencil size={18} />
+                          <Pencil size={16} />
                         </button>
                         <button
                           onClick={() => handleToggleActive(u)}
                           disabled={u.id === currentUser?.id}
-                          className={`p-2 min-h-[40px] min-w-[40px] rounded-xl transition-colors ${
-                            u.id === currentUser?.id ? 'opacity-30 cursor-not-allowed' :
-                            u.is_active ? 'text-[#D97706] hover:bg-[#FEF9EE]' : 'text-[#10B981] hover:bg-[#ECFDF5]'
+                          className={`p-2 rounded-lg transition-colors ${
+                            u.id === currentUser?.id 
+                              ? 'opacity-30 cursor-not-allowed text-[#94A3B8]' 
+                              : u.is_active 
+                                ? 'text-[#DC2626] hover:bg-[#FEF2F2]' 
+                                : 'text-[#059669] hover:bg-[#ECFDF5]'
                           }`}
                           aria-label={u.is_active ? 'Deaktivovat' : 'Aktivovat'}
                         >
-                          {u.is_active ? <X size={18} /> : <UserCheck size={18} />}
+                          <X size={16} />
                         </button>
                       </div>
                     </td>
@@ -305,70 +323,67 @@ const Admin: React.FC = () => {
         )}
       </div>
 
+      {/* Modal */}
       {showModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/20 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9] w-full max-w-md my-8">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#E2E5E9]">
-              <h2 className="text-xl font-semibold text-[#0F172A]">
+          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] w-full max-w-md my-8 shadow-xl">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#E2E8F0]">
+              <h2 className="text-lg font-bold text-[#0F172A]">
                 {modalMode === 'edit' ? 'Upravit uživatele' : 'Nový uživatel'}
               </h2>
               <button 
                 onClick={handleCloseModal}
-                className="p-3 min-w-[44px] min-h-[44px] rounded-xl text-[#475569] hover:bg-[#F4F6F8] transition-colors"
+                className="p-2 rounded-lg text-[#64748B] hover:bg-[#F1F5F9] transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-sm text-[#475569] font-medium">Celé jméno *</label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-[#475569]">Celé jméno *</label>
                 <input 
                   type="text" 
                   value={formData.full_name} 
                   onChange={(e) => setFormData({...formData, full_name: e.target.value})} 
-                  className="w-full px-4 py-3 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all font-medium"
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
                   required 
                 />
               </div>
               
-              <div className="space-y-2">
-                <label className="text-sm text-[#475569] font-medium">E-mailová adresa *</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-[#475569]">E-mailová adresa *</label>
                 <input 
                   type="email" 
                   value={formData.email} 
                   disabled={modalMode === 'edit'} 
                   onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                  className="w-full px-4 py-3 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
                   required 
                 />
               </div>
 
-              {/* Password - only for create mode */}
               {modalMode === 'create' && (
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm text-[#475569] font-medium">
-                    Heslo *
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-[#475569]">Heslo *</label>
                   <div className="relative">
                     <input
-                      id="password"
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full px-4 py-3 pr-12 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all font-medium"
+                      className="w-full px-4 pr-12 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
                       placeholder="Minimálně 6 znaků"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5C6878] hover:text-[#0F172A] transition-colors p-1"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B] transition-colors p-1"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -376,72 +391,73 @@ const Admin: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-[#475569] font-medium">Telefon</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-[#475569]">Telefon</label>
                   <input 
                     type="text" 
                     value={formData.phone} 
                     onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                    className="w-full px-4 py-3 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all font-medium"
+                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
                     placeholder="+420..."
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm text-[#475569] font-medium">Pozice</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-[#475569]">Pozice</label>
                   <input 
                     type="text" 
                     value={formData.position} 
                     onChange={(e) => setFormData({...formData, position: e.target.value})} 
-                    className="w-full px-4 py-3 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all font-medium"
+                    className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] transition-all"
                     placeholder="Např. PM"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-[#475569] font-medium">Role</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-[#475569]">Role</label>
                 <select 
                   value={formData.role} 
-                  onChange={(e) => setFormData({...formData, role: e.target.value as any})} 
-                  className="w-full px-4 py-3 min-h-[44px] bg-[#F8F9FA] border border-[#E2E5E9] rounded-xl text-base text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer font-medium"
+                  onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})} 
+                  className="w-full px-4 h-11 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] appearance-none cursor-pointer"
                 >
                   <option value="user">Uživatel</option>
                   <option value="admin">Administrátor</option>
                 </select>
               </div>
 
-              <label className="flex items-center gap-3 cursor-pointer min-h-[44px]">
+              <label className="flex items-center gap-3 cursor-pointer py-2">
                 <input 
                   type="checkbox" 
                   checked={formData.is_active} 
                   onChange={(e) => setFormData({...formData, is_active: e.target.checked})} 
-                  className="w-5 h-5 rounded border-[#CDD1D6] bg-[#F8F9FA] text-[#5B9AAD] focus:ring-[#5B9AAD]"
+                  className="w-5 h-5 rounded border-[#E2E8F0] text-[#5B9AAD] focus:ring-[#5B9AAD]"
                 />
-                <span className="text-base text-[#0F172A] font-medium">Aktivní účet</span>
+                <span className="text-sm font-medium text-[#0F172A]">Aktivní účet</span>
               </label>
 
-              <div className="flex gap-4 pt-6 border-t border-[#E2E5E9]">
+              <div className="flex gap-3 pt-4 border-t border-[#E2E8F0]">
                 <button 
                   type="button" 
                   onClick={handleCloseModal} 
-                  className="flex-1 py-3 bg-[#FAFBFC] border border-[#E2E5E9] text-[#0F172A] rounded-xl font-medium hover:bg-[#F4F6F8]"
+                  className="flex-1 h-11 bg-white border border-[#E2E8F0] text-[#0F172A] rounded-xl text-sm font-semibold hover:bg-[#F8FAFC] transition-all"
                 >
                   Zrušit
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="flex-1 py-3 bg-[#5B9AAD] text-[#F8FAFC] rounded-xl font-medium hover:bg-[#4A8A9D] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-11 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] disabled:opacity-50 flex items-center justify-center gap-2 transition-all"
                 >
-                  {isSaving ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                  <span>{modalMode === 'edit' ? 'Uložit změny' : 'Vytvořit'}</span>
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                  <span>{modalMode === 'edit' ? 'Uložit' : 'Vytvořit'}</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+      
       {ToastComponent}
     </div>
   );
