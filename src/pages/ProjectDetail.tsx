@@ -17,10 +17,13 @@ import BudgetHistory from '../components/BudgetHistory';
 
 type TabType = 'overview' | 'history' | 'documents';
 
+interface ChartDataPoint {
+  date: string;
+  total: number;
+}
+
 /**
  * UNIFIED StatCard - 2026 Enterprise SaaS
- * Font-weight: minimum 500
- * Gestalt: Proximity - icon grouped with content
  */
 const StatCard: React.FC<{ 
   label: string; 
@@ -29,7 +32,7 @@ const StatCard: React.FC<{
   variant?: 'default' | 'warning' | 'success';
   subValue?: string;
 }> = ({ label, value, icon: Icon, variant = 'default', subValue }) => {
-  const styles = {
+  const styles: Record<string, { card: string; icon: string; label: string; value: string }> = {
     default: {
       card: 'border-[#E2E8F0] bg-white',
       icon: 'bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] text-[#5B9AAD]',
@@ -90,10 +93,14 @@ const ProjectStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     paused: 'bg-amber-500',
   };
 
+  const currentStyle = styles[status] || styles.active;
+  const currentLabel = labels[status] || 'Aktivní';
+  const currentDot = dotColors[status] || dotColors.active;
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[status] || styles.active}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status] || dotColors.active}`} />
-      {labels[status] || 'Aktivní'}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${currentStyle}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${currentDot}`} />
+      {currentLabel}
     </span>
   );
 };
@@ -156,6 +163,33 @@ const InvoiceCard: React.FC<{ invoice: Invoice }> = ({ invoice }) => (
   </div>
 );
 
+/**
+ * Breadcrumb Item Component - zajišťuje konzistentní výšku a zarovnání
+ */
+const BreadcrumbLink: React.FC<{ 
+  to: string; 
+  children: React.ReactNode;
+  icon?: React.ElementType;
+}> = ({ to, children, icon: Icon }) => (
+  <Link 
+    to={to} 
+    className="inline-flex items-center gap-1.5 text-[#64748B] hover:text-[#5B9AAD] transition-colors font-semibold whitespace-nowrap h-6"
+  >
+    {Icon && <Icon size={16} className="shrink-0" />}
+    <span>{children}</span>
+  </Link>
+);
+
+const BreadcrumbSeparator: React.FC = () => (
+  <ChevronRight size={16} className="text-[#CBD5E1] shrink-0 mx-1" />
+);
+
+const BreadcrumbCurrent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="inline-flex items-center text-[#0F172A] font-bold truncate max-w-[200px] sm:max-w-[300px] h-6">
+    {children}
+  </span>
+);
+
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -163,16 +197,16 @@ const ProjectDetail: React.FC = () => {
   
   const [project, setProject] = useState<Project | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const { showToast, ToastComponent } = useToast();
 
-  const [isEditingBudget, setIsEditingBudget] = useState(false);
-  const [budgetValue, setBudgetValue] = useState(0);
-  const [budgetReason, setBudgetReason] = useState('');
-  const [isSavingBudget, setIsSavingBudget] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState<boolean>(false);
+  const [budgetValue, setBudgetValue] = useState<number>(0);
+  const [budgetReason, setBudgetReason] = useState<string>('');
+  const [isSavingBudget, setIsSavingBudget] = useState<boolean>(false);
 
-  const fetchData = async () => {
+  const fetchData = async (): Promise<void> => {
     if (!id) return;
     setLoading(true);
     try {
@@ -196,7 +230,7 @@ const ProjectDetail: React.FC = () => {
     fetchData(); 
   }, [id]);
 
-  const handleSaveBudget = async () => {
+  const handleSaveBudget = async (): Promise<void> => {
     if (!project || !profile) return;
     
     if (budgetValue === project.planned_budget) {
@@ -224,13 +258,13 @@ const ProjectDetail: React.FC = () => {
     }
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (): void => {
     setIsEditingBudget(false);
     setBudgetValue(project?.planned_budget || 0);
     setBudgetReason('');
   };
 
-  const chartData = useMemo(() => {
+  const chartData = useMemo((): ChartDataPoint[] => {
     let sum = 0;
     return invoices.map(inv => {
       sum += inv.total_amount;
@@ -252,20 +286,22 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in pb-12">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
-        <Link to="/" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#5B9AAD] transition-colors font-medium">
-          <Home size={14} />
-          <span>Přehled</span>
-        </Link>
-        <ChevronRight size={14} className="text-[#CBD5E1]" />
-        <Link to="/projects" className="text-[#64748B] hover:text-[#5B9AAD] transition-colors font-medium">
+      {/* Breadcrumbs - OPRAVENO: větší písmo, správné zarovnání */}
+      <nav 
+        className="flex items-center text-base" 
+        aria-label="Breadcrumb"
+      >
+        <BreadcrumbLink to="/" icon={Home}>
+          Přehled
+        </BreadcrumbLink>
+        <BreadcrumbSeparator />
+        <BreadcrumbLink to="/projects">
           Projekty
-        </Link>
-        <ChevronRight size={14} className="text-[#CBD5E1]" />
-        <span className="text-[#0F172A] font-semibold truncate max-w-[200px] sm:max-w-[300px]">
+        </BreadcrumbLink>
+        <BreadcrumbSeparator />
+        <BreadcrumbCurrent>
           {project.name}
-        </span>
+        </BreadcrumbCurrent>
       </nav>
 
       {/* Header */}
@@ -327,7 +363,9 @@ const ProjectDetail: React.FC = () => {
               {isEditingBudget && isAdmin ? (
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1 block">Nový rozpočet</label>
+                    <label className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1 block">
+                      Nový rozpočet
+                    </label>
                     <input
                       type="number"
                       value={budgetValue}
@@ -336,7 +374,9 @@ const ProjectDetail: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1 block">Důvod změny</label>
+                    <label className="text-xs font-semibold text-[#64748B] uppercase tracking-wider mb-1 block">
+                      Důvod změny
+                    </label>
                     <textarea
                       value={budgetReason}
                       onChange={(e) => setBudgetReason(e.target.value)}
@@ -429,7 +469,7 @@ const ProjectDetail: React.FC = () => {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }} 
-                    tickFormatter={(val) => `${(val / 1000000).toFixed(1)}M`} 
+                    tickFormatter={(val: number) => `${(val / 1000000).toFixed(1)}M`} 
                     width={45}
                   />
                   <Tooltip 
