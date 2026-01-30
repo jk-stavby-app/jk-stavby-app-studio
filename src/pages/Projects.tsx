@@ -20,7 +20,7 @@ const ProjectStatCard: React.FC<{
   icon: React.ElementType;
   variant?: 'default' | 'success' | 'warning';
 }> = ({ label, value, subValue, icon: Icon, variant = 'default' }) => {
-  const iconStyles = {
+  const iconStyles: Record<string, string> = {
     default: 'bg-[#F0F9FF] text-[#5B9AAD]',
     success: 'bg-emerald-50 text-emerald-600',
     warning: 'bg-amber-50 text-amber-600',
@@ -64,10 +64,14 @@ const ProjectStatusBadge: React.FC<{ status: string }> = ({ status }) => {
     paused: 'bg-amber-500',
   };
 
+  const currentStyle = styles[status] || styles.active;
+  const currentLabel = labels[status] || 'Aktivní';
+  const currentDot = dotColors[status] || dotColors.active;
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${styles[status] || styles.active}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColors[status] || dotColors.active}`} />
-      {labels[status] || 'Aktivní'}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${currentStyle}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${currentDot}`} />
+      {currentLabel}
     </span>
   );
 };
@@ -76,17 +80,23 @@ const ProjectStatusBadge: React.FC<{ status: string }> = ({ status }) => {
  * BudgetProgressBar
  */
 const BudgetProgressBar: React.FC<{ percent: number }> = ({ percent }) => {
-  const getColor = () => {
+  const getColor = (): string => {
     if (percent > 90) return 'bg-red-500';
     if (percent > 70) return 'bg-amber-500';
     return 'bg-[#5B9AAD]';
+  };
+
+  const getTextColor = (): string => {
+    if (percent > 90) return 'text-red-600';
+    if (percent > 70) return 'text-amber-600';
+    return 'text-[#0F172A]';
   };
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-semibold text-[#64748B]">Čerpání rozpočtu</span>
-        <span className={`text-xs font-bold ${percent > 90 ? 'text-red-600' : percent > 70 ? 'text-amber-600' : 'text-[#0F172A]'}`}>
+        <span className={`text-xs font-bold ${getTextColor()}`}>
           {percent.toFixed(1)}%
         </span>
       </div>
@@ -144,17 +154,17 @@ const ProjectCard: React.FC<{ project: Project; onClick: () => void }> = ({ proj
 const Projects: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
-  const [hideEmpty, setHideEmpty] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [hideEmpty, setHideEmpty] = useState<boolean>(false);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [offset, setOffset] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
 
   // Fetch projects with pagination
-  const fetchProjects = async (reset: boolean = false) => {
+  const fetchProjects = async (reset: boolean = false): Promise<void> => {
     try {
       if (reset) {
         setLoading(true);
@@ -181,7 +191,7 @@ const Projects: React.FC = () => {
 
       if (error) throw error;
 
-      const newProjects = data || [];
+      const newProjects: Project[] = data || [];
 
       if (reset) {
         setProjects(newProjects);
@@ -204,14 +214,14 @@ const Projects: React.FC = () => {
     fetchProjects(true);
   }, []);
 
-  const loadMore = () => {
+  const loadMore = (): void => {
     if (!loadingMore && hasMore) {
       fetchProjects(false);
     }
   };
 
   // Filter projects
-  const filteredProjects = useMemo(() => {
+  const filteredProjects = useMemo((): Project[] => {
     return projects.filter(project => {
       // Search filter
       const matchesSearch = 
@@ -228,22 +238,33 @@ const Projects: React.FC = () => {
     });
   }, [projects, searchTerm, statusFilter, hideEmpty]);
 
-  // Calculate stats from ALL projects (not filtered)
-  const stats = useMemo(() => ({
-    total: projects.length,
-    active: projects.filter(p => p.status === 'active').length,
-    totalBudget: projects.reduce((sum, p) => sum + (p.planned_budget || 0), 0),
-    totalSpent: projects.reduce((sum, p) => sum + (p.total_costs || 0), 0),
-    avgUtilization: projects.length > 0 
-      ? projects.reduce((sum, p) => sum + (p.budget_usage_percent || 0), 0) / projects.length 
-      : 0,
-  }), [projects]);
+  // Calculate stats from ALL loaded projects
+  const stats = useMemo(() => {
+    const total = projects.length;
+    const active = projects.filter(p => p.status === 'active').length;
+    const totalBudget = projects.reduce((sum, p) => sum + (p.planned_budget || 0), 0);
+    const totalSpent = projects.reduce((sum, p) => sum + (p.total_costs || 0), 0);
+    const avgUtilization = total > 0 
+      ? projects.reduce((sum, p) => sum + (p.budget_usage_percent || 0), 0) / total 
+      : 0;
 
-  // Handle new project (placeholder - would open modal or navigate)
-  const handleNewProject = () => {
-    // TODO: Implement new project creation
+    return { total, active, totalBudget, totalSpent, avgUtilization };
+  }, [projects]);
+
+  // Handle new project
+  const handleNewProject = (): void => {
     alert('Funkce pro vytvoření nového projektu bude dostupná v příští verzi.');
   };
+
+  // Reset all filters
+  const handleResetFilters = (): void => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setHideEmpty(false);
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = statusFilter !== 'all' || hideEmpty || searchTerm.length > 0;
 
   if (loading) {
     return (
@@ -346,12 +367,12 @@ const Projects: React.FC = () => {
         </div>
 
         {/* Active filters summary */}
-        {(statusFilter !== 'all' || hideEmpty || searchTerm) && (
+        {hasActiveFilters && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#E2E8F0] flex-wrap">
             <span className="text-xs font-semibold text-[#64748B]">Aktivní filtry:</span>
             {searchTerm && (
               <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
-                Hledání: "{searchTerm}"
+                Hledání: &quot;{searchTerm}&quot;
               </span>
             )}
             {statusFilter !== 'all' && (
@@ -365,11 +386,7 @@ const Projects: React.FC = () => {
               </span>
             )}
             <button
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-                setHideEmpty(false);
-              }}
+              onClick={handleResetFilters}
               className="px-2 py-1 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
             >
               Zrušit vše
