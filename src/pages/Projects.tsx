@@ -11,7 +11,7 @@ import { formatCurrency } from '../constants';
 const ITEMS_PER_PAGE = 50;
 
 /**
- * UNIFIED StatCard - 2026 Enterprise SaaS
+ * UNIFIED StatCard - 2026 Enterprise SaaS Daniel Vilim
  */
 const ProjectStatCard: React.FC<{
   label: string;
