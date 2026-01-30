@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
-import { Calendar, FileText, Loader2, TrendingUp, DollarSign, PieChart as PieIcon, Download } from 'lucide-react';
+import { Calendar, Download, Loader2, TrendingUp, DollarSign, PieChart as PieIcon, Users, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { COLORS, formatCurrency } from '../constants';
 import { supabase } from '../lib/supabase';
 import html2canvas from 'html2canvas';
@@ -49,34 +49,54 @@ interface BudgetComparison {
 }
 
 /**
- * UNIFIED ReportMetric - 2026 UX/UI Standards
- * Label: 1.1-1.2rem, font-weight 600 (nadpis - výraznější)
- * Value: 1rem, font-weight 500 (data - menší než nadpis)
+ * UNIFIED ReportMetric - 2026 Enterprise SaaS
+ * Font-weight: minimum 500
+ * Gestalt: Proximity - icon grouped with content
  */
 const ReportMetric: React.FC<{
   label: string;
   value: string;
   icon: React.ElementType;
-  trend?: string;
-  negative?: boolean;
-}> = ({ label, value, icon: Icon, trend, negative }) => (
-  <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0]">
-    <div className="flex items-center justify-between mb-3">
-      <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#F0F9FF] text-[#5B9AAD] rounded-xl flex items-center justify-center">
-        <Icon size={18} />
+  trend?: { val: string; pos: boolean };
+}> = ({ label, value, icon: Icon, trend }) => (
+  <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-all">
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-11 h-11 bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] rounded-xl flex items-center justify-center text-[#5B9AAD] shadow-sm">
+        <Icon size={20} strokeWidth={2} />
       </div>
       {trend && (
-        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${negative ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
-          {trend}
-        </span>
+        <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+          trend.pos 
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+            : 'bg-red-50 text-red-700 border-red-200'
+        }`}>
+          {trend.pos ? <ArrowUpRight size={12} strokeWidth={2.5} /> : <ArrowDownRight size={12} strokeWidth={2.5} />}
+          {trend.val}
+        </div>
       )}
     </div>
-    <div>
-      {/* Label - NADPIS: 1.1-1.2rem, font-semibold */}
-      <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">{label}</h4>
-      {/* Value - DATA: 1rem, font-medium */}
-      <p className="text-base font-medium text-[#475569] tabular-nums">{value}</p>
+    <div className="space-y-1">
+      <h4 className="text-[1.05rem] sm:text-[1.15rem] font-semibold text-[#334155] leading-tight">{label}</h4>
+      <p className="text-[1.1rem] sm:text-[1.2rem] font-bold text-[#0F172A] tabular-nums">{value}</p>
     </div>
+  </div>
+);
+
+/**
+ * SupplierCard - Mobile card for suppliers
+ */
+const SupplierCard: React.FC<{ supplier: SupplierData; index: number }> = ({ supplier, index }) => (
+  <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-[#E2E8F0] shadow-sm">
+    <div className="flex items-center gap-3 min-w-0 flex-1">
+      <div 
+        className="w-4 h-4 rounded-full shrink-0 shadow-sm" 
+        style={{ backgroundColor: COLORS.chart[index % COLORS.chart.length] }} 
+      />
+      <span className="text-sm font-semibold text-[#0F172A] truncate">{supplier.name}</span>
+    </div>
+    <span className="text-sm font-bold text-[#5B9AAD] shrink-0 ml-3 tabular-nums">
+      {formatCurrency(supplier.value)}
+    </span>
   </div>
 );
 
@@ -104,7 +124,7 @@ const Reports: React.FC = () => {
             .select('id, name, code, planned_budget, total_costs, budget_usage_percent')
             .gt('total_costs', 0)
             .order('total_costs', { ascending: false })
-            .limit(12),
+            .limit(10),
           supabase.from('project_invoices')
             .select('date_issue, total_amount, supplier_name')
             .not('project_id', 'is', null)
@@ -130,12 +150,14 @@ const Reports: React.FC = () => {
     return () => { isMounted = false; };
   }, []);
 
+  // PDF Export function
   const handleExportPDF = async () => {
     if (!reportRef.current) return;
     
     setIsExporting(true);
     try {
       const element = reportRef.current;
+      
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -218,13 +240,13 @@ const Reports: React.FC = () => {
     return Object.entries(suppliers)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .slice(0, 6);
   }, [monthlyInvoices]);
 
   const budgetComparison = useMemo<BudgetComparison[]>(() => {
     if (!projects.length) return [];
-    return projects.map((p) => ({
-      name: p.name.length > 12 ? p.name.substring(0, 12) + '...' : p.name,
+    return projects.slice(0, 8).map((p) => ({
+      name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
       planned: p.planned_budget || 0,
       actual: p.total_costs || 0
     }));
@@ -236,7 +258,7 @@ const Reports: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
-        <p className="text-base font-medium text-[#64748B]">Připravujeme analytický report...</p>
+        <p className="text-base font-semibold text-[#64748B]">Připravujeme analytický report...</p>
       </div>
     );
   }
@@ -244,7 +266,7 @@ const Reports: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <p className="text-base font-medium text-red-600">{error}</p>
+        <p className="text-base font-semibold text-red-600">{error}</p>
       </div>
     );
   }
@@ -254,27 +276,27 @@ const Reports: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-[#0F172A] tracking-tight">Obchodní Analytika</h2>
-          <p className="text-sm text-[#64748B]">Detailní finanční přehled a výkonnost staveb</p>
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Obchodní analytika</h1>
+          <p className="text-sm font-medium text-[#64748B] mt-1">Detailní finanční přehled a výkonnost staveb</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-all">
-            <Calendar size={16} className="text-[#5B9AAD]" />
-            <span>Období 2026</span>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-all shadow-sm">
+            <Calendar size={18} className="text-[#5B9AAD]" />
+            <span>2026</span>
           </button>
           <button 
             onClick={handleExportPDF}
             disabled={isExporting}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-5 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all shadow-sm disabled:opacity-70"
           >
             {isExporting ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={18} className="animate-spin" />
                 <span>Generuji...</span>
               </>
             ) : (
               <>
-                <Download size={16} />
+                <Download size={18} />
                 <span>Stáhnout PDF</span>
               </>
             )}
@@ -282,59 +304,105 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Report content */}
+      {/* Report content - captured for PDF */}
       <div ref={reportRef} className="space-y-6">
-        {/* Metrics - UNIFIED */}
+        {/* Metrics Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <ReportMetric label="Celkové náklady" value={formatCurrency(stats?.total_spent ?? 0)} icon={DollarSign} trend="+12.4%" />
-          <ReportMetric label="Aktivní rozpočty" value={formatCurrency(stats?.total_budget ?? 0)} icon={TrendingUp} />
-          <ReportMetric label="Počet dodavatelů" value={supplierData.length.toString()} icon={PieIcon} />
-          <ReportMetric label="Prům. čerpání" value={`${(stats?.avg_utilization ?? 0).toFixed(1)}%`} icon={TrendingUp} trend="-2.1%" negative />
+          <ReportMetric 
+            label="Celkové náklady" 
+            value={formatCurrency(stats?.total_spent ?? 0)} 
+            icon={DollarSign} 
+            trend={{ val: '12.4%', pos: true }}
+          />
+          <ReportMetric 
+            label="Aktivní rozpočty" 
+            value={formatCurrency(stats?.total_budget ?? 0)} 
+            icon={TrendingUp}
+          />
+          <ReportMetric 
+            label="Počet dodavatelů" 
+            value={supplierData.length.toString()} 
+            icon={Users}
+          />
+          <ReportMetric 
+            label="Prům. čerpání" 
+            value={`${(stats?.avg_utilization ?? 0).toFixed(1)}%`} 
+            icon={PieIcon}
+            trend={{ val: '2.1%', pos: false }}
+          />
         </div>
 
-        {/* Charts */}
+        {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Area Chart */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0]">
-            <h3 className="text-base font-semibold text-[#0F172A] mb-5">Vývoj finančních toků</h3>
+          
+          {/* Area Chart - Finanční toky */}
+          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[1.1rem] font-bold text-[#0F172A]">Vývoj finančních toků</h3>
+              <span className="text-sm font-semibold text-[#5B9AAD]">Měsíční přehled</span>
+            </div>
             <div className="h-[280px] sm:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyAggregated}>
                   <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.2}/>
+                      <stop offset="5%" stopColor="#5B9AAD" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#5B9AAD" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(val: number) => `${(val / 1000000).toFixed(1)}M`} width={45} />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }} 
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }} 
+                    tickFormatter={(val: number) => `${(val / 1000000).toFixed(1)}M`} 
+                    width={50} 
+                  />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #E2E8F0', 
+                      borderRadius: '12px', 
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }} 
                     formatter={(value: number) => [tooltipFormatter(value), 'Náklady']}
                   />
-                  <Area type="monotone" dataKey="total" stroke="#5B9AAD" strokeWidth={2.5} fill="url(#colorValue)" />
+                  <Area 
+                    type="monotone" 
+                    dataKey="total" 
+                    stroke="#5B9AAD" 
+                    strokeWidth={3} 
+                    fill="url(#colorValue)" 
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Bar Chart */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0]">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-[#0F172A]">Rozpočet vs. Skutečnost</h3>
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5">
+          {/* Horizontal Bar Chart - Rozpočet vs Skutečnost */}
+          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[1.1rem] font-bold text-[#0F172A]">Rozpočet vs. skutečnost</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-[#94A3B8]" />
-                  <span className="text-[#64748B]">Plán</span>
+                  <span className="text-xs font-semibold text-[#64748B]">Plán</span>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
-                  <span className="text-[#64748B]">Čerpáno</span>
+                  <span className="text-xs font-semibold text-[#64748B]">Čerpáno</span>
                 </div>
               </div>
             </div>
-            <div className="h-[400px] sm:h-[480px]">
+            <div className="h-[280px] sm:h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={budgetComparison} 
@@ -349,34 +417,46 @@ const Reports: React.FC = () => {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: '#1E3A5F', fontSize: 11, fontWeight: 600 }} 
-                    width={95} 
+                    width={100} 
                   />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #E2E8F0', 
+                      borderRadius: '12px', 
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }} 
                     formatter={(value: number) => tooltipFormatter(value)}
                   />
-                  <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={12} />
-                  <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={12} />
+                  <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={10} />
+                  <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={10} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        {/* Suppliers */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2E8F0]">
-          <h3 className="text-base font-semibold text-[#0F172A] mb-5">Klíčoví subdodavatelé</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="h-[220px] sm:h-[250px]">
+        {/* Suppliers Section */}
+        <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[1.1rem] font-bold text-[#0F172A]">Klíčoví subdodavatelé</h3>
+            <span className="text-sm font-semibold text-[#5B9AAD]">Top {supplierData.length}</span>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Pie Chart - Desktop only */}
+            <div className="hidden lg:block h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={supplierData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={4}
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {supplierData.map((_, index) => (
@@ -384,23 +464,127 @@ const Reports: React.FC = () => {
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #E2E8F0', 
+                      borderRadius: '12px', 
+                      fontSize: '13px',
+                      fontWeight: 600 
+                    }} 
                     formatter={(value: number) => tooltipFormatter(value)}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-2 sm:space-y-3">
+            
+            {/* Supplier list - Mobile + Desktop */}
+            <div className="space-y-3 lg:col-span-1">
               {supplierData.map((s, idx) => (
-                <div key={s.name} className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS.chart[idx % COLORS.chart.length] }} />
-                    <span className="text-sm font-semibold text-[#0F172A] truncate">{s.name}</span>
-                  </div>
-                  <span className="text-sm font-bold text-[#5B9AAD] shrink-0 ml-2 tabular-nums">{formatCurrency(s.value)}</span>
-                </div>
+                <SupplierCard key={s.name} supplier={s} index={idx} />
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Project Performance Table */}
+        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#E2E8F0]">
+            <h3 className="text-[1.1rem] font-bold text-[#0F172A]">Výkonnost projektů</h3>
+            <p className="text-sm font-medium text-[#64748B] mt-1">Detailní přehled čerpání rozpočtů</p>
+          </div>
+          
+          {/* MOBILE: Card View */}
+          <div className="lg:hidden p-4 space-y-3 bg-[#F8FAFC]">
+            {projects.slice(0, 6).map((project) => (
+              <div key={project.id} className="bg-white rounded-xl p-4 border border-[#E2E8F0] shadow-sm">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-[#0F172A] truncate">{project.name}</p>
+                    <p className="text-xs font-semibold text-[#64748B] mt-0.5">{project.code}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                    project.budget_usage_percent > 90 
+                      ? 'bg-red-50 text-red-700 border-red-200' 
+                      : project.budget_usage_percent > 70 
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}>
+                    {project.budget_usage_percent.toFixed(0)}%
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-[#F1F5F9]">
+                  <div>
+                    <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Rozpočet</p>
+                    <p className="text-sm font-bold text-[#0F172A] tabular-nums">{formatCurrency(project.planned_budget)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Čerpáno</p>
+                    <p className="text-sm font-bold text-[#5B9AAD] tabular-nums">{formatCurrency(project.total_costs)}</p>
+                  </div>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-3">
+                  <div className="w-full h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all ${
+                        project.budget_usage_percent > 90 
+                          ? 'bg-red-500' 
+                          : project.budget_usage_percent > 70 
+                            ? 'bg-amber-500'
+                            : 'bg-[#5B9AAD]'
+                      }`}
+                      style={{ width: `${Math.min(project.budget_usage_percent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* DESKTOP: Table View */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                  <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Projekt</th>
+                  <th className="px-5 py-3.5 text-xs font-bold text-[#64748B] uppercase tracking-wider">Kód</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-[#64748B] uppercase tracking-wider">Rozpočet</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-[#64748B] uppercase tracking-wider">Čerpáno</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-[#64748B] uppercase tracking-wider">Zbývá</th>
+                  <th className="px-5 py-3.5 text-center text-xs font-bold text-[#64748B] uppercase tracking-wider">Využití</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F5F9]">
+                {projects.slice(0, 8).map((project) => (
+                  <tr key={project.id} className="hover:bg-[#FAFBFC] transition-colors">
+                    <td className="px-5 py-4 text-sm font-bold text-[#0F172A]">{project.name}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-[#64748B]">{project.code}</td>
+                    <td className="px-5 py-4 text-sm font-semibold text-[#334155] text-right tabular-nums">
+                      {formatCurrency(project.planned_budget)}
+                    </td>
+                    <td className="px-5 py-4 text-sm font-bold text-[#5B9AAD] text-right tabular-nums">
+                      {formatCurrency(project.total_costs)}
+                    </td>
+                    <td className="px-5 py-4 text-sm font-semibold text-[#64748B] text-right tabular-nums">
+                      {formatCurrency(project.planned_budget - project.total_costs)}
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                        project.budget_usage_percent > 90 
+                          ? 'bg-red-50 text-red-700 border-red-200' 
+                          : project.budget_usage_percent > 70 
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {project.budget_usage_percent.toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
