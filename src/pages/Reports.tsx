@@ -67,7 +67,7 @@ const Reports: React.FC = () => {
             .select('id, name, code, planned_budget, total_costs, budget_usage_percent')
             .gt('total_costs', 0)
             .order('total_costs', { ascending: false })
-            .limit(10),
+            .limit(12),
           supabase.from('project_invoices')
             .select('date_issue, total_amount, supplier_name')
             .not('project_id', 'is', null)
@@ -129,7 +129,7 @@ const Reports: React.FC = () => {
   const budgetComparison = useMemo<BudgetComparison[]>(() => {
     if (!projects.length) return [];
     return projects.map((p) => ({
-      name: p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name,
+      name: p.name.length > 12 ? p.name.substring(0, 12) + '...' : p.name,
       planned: p.planned_budget || 0,
       actual: p.total_costs || 0
     }));
@@ -163,18 +163,18 @@ const Reports: React.FC = () => {
           <p className="text-sm text-[#64748B]">Detailní finanční přehled a výkonnost staveb</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] hover:bg-[#F8FAFC] transition-all">
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-all">
             <Calendar size={16} className="text-[#5B9AAD]" />
             <span>Období 2026</span>
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-[#5B9AAD] text-white rounded-xl text-sm font-medium hover:bg-[#4A8A9D] transition-all">
+          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4 bg-[#5B9AAD] text-white rounded-xl text-sm font-semibold hover:bg-[#4A8A9D] transition-all">
             <FileText size={16} />
             <span>Stáhnout PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Metrics - FIXED: Label as title, value below */}
+      {/* Metrics - SPRÁVNÁ HIERARCHIE: Label větší, hodnota pod ním */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <ReportMetric label="Celkové náklady" value={formatCurrency(stats?.total_spent ?? 0)} icon={DollarSign} trend="+12.4%" />
         <ReportMetric label="Aktivní rozpočty" value={formatCurrency(stats?.total_budget ?? 0)} icon={TrendingUp} />
@@ -187,7 +187,7 @@ const Reports: React.FC = () => {
         {/* Area Chart */}
         <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
           <h3 className="text-base font-semibold text-[#0F172A] mb-5">Vývoj finančních toků</h3>
-          <div className="h-[280px]">
+          <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyAggregated}>
                 <defs>
@@ -209,12 +209,29 @@ const Reports: React.FC = () => {
           </div>
         </div>
 
-        {/* Bar Chart - FIXED: Plán color changed from silver to readable blue-gray */}
+        {/* Bar Chart - ZVĚTŠENÝ KONTEJNER */}
         <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0]">
-          <h3 className="text-base font-semibold text-[#0F172A] mb-5">Rozpočet vs. Skutečnost</h3>
-          <div className="h-[280px]">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-base font-semibold text-[#0F172A]">Rozpočet vs. Skutečnost</h3>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#94A3B8]" />
+                <span className="text-[#64748B]">Plán</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-[#5B9AAD]" />
+                <span className="text-[#64748B]">Čerpáno</span>
+              </div>
+            </div>
+          </div>
+          {/* ZVĚTŠENÝ kontejner - 480px aby se vešlo 12 projektů */}
+          <div className="h-[480px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={budgetComparison} layout="vertical" margin={{ left: 5 }}>
+              <BarChart 
+                data={budgetComparison} 
+                layout="vertical" 
+                margin={{ left: 0, right: 10, top: 5, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" horizontal={false} />
                 <XAxis type="number" hide />
                 <YAxis 
@@ -222,21 +239,15 @@ const Reports: React.FC = () => {
                   type="category" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#1E3A5F', fontSize: 11, fontWeight: 500 }} 
-                  width={75} 
+                  tick={{ fill: '#1E3A5F', fontSize: 11, fontWeight: 600 }} 
+                  width={95} 
                 />
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '13px' }} 
                   formatter={(value: number) => tooltipFormatter(value)}
                 />
-                <Legend 
-                  iconType="circle" 
-                  iconSize={8}
-                  wrapperStyle={{ paddingTop: '16px', fontSize: '12px' }} 
-                />
-                {/* FIXED: Changed from #E2E5E9 (too light) to #94A3B8 (readable) */}
-                <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={14} />
-                <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={14} />
+                <Bar dataKey="planned" name="Plán" fill="#94A3B8" radius={[0, 4, 4, 0]} barSize={12} />
+                <Bar dataKey="actual" name="Čerpáno" fill="#5B9AAD" radius={[0, 4, 4, 0]} barSize={12} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -275,9 +286,9 @@ const Reports: React.FC = () => {
               <div key={s.name} className="flex items-center justify-between p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS.chart[idx % COLORS.chart.length] }} />
-                  <span className="text-sm font-medium text-[#0F172A] truncate">{s.name}</span>
+                  <span className="text-sm font-semibold text-[#0F172A] truncate">{s.name}</span>
                 </div>
-                <span className="text-sm font-semibold text-[#5B9AAD] shrink-0 ml-2 tabular-nums">{formatCurrency(s.value)}</span>
+                <span className="text-sm font-bold text-[#5B9AAD] shrink-0 ml-2 tabular-nums">{formatCurrency(s.value)}</span>
               </div>
             ))}
           </div>
@@ -295,7 +306,7 @@ interface ReportMetricProps {
   negative?: boolean;
 }
 
-/* FIXED: Label as title (larger), value below (even larger) */
+/* SPRÁVNÁ HIERARCHIE: Label jako nadpis (větší/výraznější), hodnota pod ním */
 const ReportMetric: React.FC<ReportMetricProps> = ({ label, value, icon: Icon, trend, negative }) => (
   <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0]">
     <div className="flex items-center justify-between mb-4">
@@ -309,8 +320,10 @@ const ReportMetric: React.FC<ReportMetricProps> = ({ label, value, icon: Icon, t
       )}
     </div>
     <div>
-      <p className="text-sm font-semibold text-[#475569] mb-1">{label}</p>
-      <h4 className="text-xl font-bold text-[#0F172A] tabular-nums">{value}</h4>
+      {/* LABEL - nadpis: větší velikost, výraznější */}
+      <h4 className="text-sm font-semibold text-[#475569] mb-1">{label}</h4>
+      {/* VALUE - data: největší, bold */}
+      <p className="text-xl font-bold text-[#0F172A] tabular-nums">{value}</p>
     </div>
   </div>
 );
