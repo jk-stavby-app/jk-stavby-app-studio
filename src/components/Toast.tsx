@@ -20,20 +20,20 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
   const backgrounds = {
     success: 'bg-[#ECFDF5] border-[#10B981]/20',
     error: 'bg-[#FEF2F2] border-[#DC2626]/20',
-    info: 'bg-[#F0F7F9] border-[#5B9AAD]/20',
-    loading: 'bg-[#F0F7F9] border-[#5B9AAD]/20',
+    info: 'bg-[#F0F9FF] border-[#5B9AAD]/20',
+    loading: 'bg-[#F0F9FF] border-[#5B9AAD]/20',
   };
 
   return (
-    <div className={`fixed bottom-8 right-8 z-[100] flex items-center gap-3 px-5 py-4 rounded-2xl border ${backgrounds[type]} animate-in`}>
+    <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-2xl border shadow-lg ${backgrounds[type]} animate-in`}>
       <div className="flex-shrink-0">
         {icons[type]}
       </div>
-      <p className="text-base font-semibold text-[#0F172A] leading-tight pr-2">{message}</p>
+      <p className="text-sm font-medium text-[#0F172A] leading-tight pr-2">{message}</p>
       {type !== 'loading' && (
         <button
           onClick={onClose}
-          className="p-1.5 text-[#5C6878] hover:text-[#0F172A] hover:bg-black/5 rounded-lg transition-all"
+          className="p-1.5 text-[#64748B] hover:text-[#0F172A] hover:bg-black/5 rounded-lg transition-all"
           aria-label="Zavřít"
         >
           <X size={16} />
