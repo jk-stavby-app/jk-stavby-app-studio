@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Folder, Search, Loader2, TrendingUp, ChevronRight, ChevronDown,
-  Calendar, DollarSign, BarChart3, Filter, Plus, Eye, EyeOff
+  DollarSign, BarChart3, Filter, Plus, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Project } from '../types';
@@ -11,7 +11,7 @@ import { formatCurrency } from '../constants';
 const ITEMS_PER_PAGE = 50;
 
 /**
- * UNIFIED StatCard - 2026 Enterprise SaaS Daniel Vilim
+ * UNIFIED StatCard - 2026 Enterprise SaaS
  */
 const ProjectStatCard: React.FC<{
   label: string;
@@ -148,22 +148,10 @@ const Projects: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
-  const [yearFilter, setYearFilter] = useState<string>('all');
   const [hideEmpty, setHideEmpty] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-
-  // Get available years from projects
-  const availableYears = useMemo(() => {
-    const years = new Set<number>();
-    projects.forEach(p => {
-      if (p.created_at) {
-        years.add(new Date(p.created_at).getFullYear());
-      }
-    });
-    return Array.from(years).sort((a, b) => b - a);
-  }, [projects]);
 
   // Fetch projects with pagination
   const fetchProjects = async (reset: boolean = false) => {
@@ -232,17 +220,13 @@ const Projects: React.FC = () => {
       
       // Status filter
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-      
-      // Year filter
-      const projectYear = project.created_at ? new Date(project.created_at).getFullYear().toString() : '';
-      const matchesYear = yearFilter === 'all' || projectYear === yearFilter;
 
       // Hide empty filter (projects with 0 costs)
       const matchesEmpty = !hideEmpty || project.total_costs > 0;
       
-      return matchesSearch && matchesStatus && matchesYear && matchesEmpty;
+      return matchesSearch && matchesStatus && matchesEmpty;
     });
-  }, [projects, searchTerm, statusFilter, yearFilter, hideEmpty]);
+  }, [projects, searchTerm, statusFilter, hideEmpty]);
 
   // Calculate stats from ALL projects (not filtered)
   const stats = useMemo(() => ({
@@ -347,22 +331,6 @@ const Projects: React.FC = () => {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={18} />
           </div>
 
-          {/* Year Filter */}
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={16} />
-            <select
-              value={yearFilter}
-              onChange={(e) => setYearFilter(e.target.value)}
-              className="h-11 pl-11 pr-10 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] focus:outline-none focus:border-[#5B9AAD] focus:bg-white appearance-none cursor-pointer min-w-[140px]"
-            >
-              <option value="all">Všechny roky</option>
-              {availableYears.map(year => (
-                <option key={year} value={year.toString()}>{year}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" size={18} />
-          </div>
-
           {/* Hide Empty Toggle */}
           <button
             onClick={() => setHideEmpty(!hideEmpty)}
@@ -378,7 +346,7 @@ const Projects: React.FC = () => {
         </div>
 
         {/* Active filters summary */}
-        {(statusFilter !== 'all' || yearFilter !== 'all' || hideEmpty || searchTerm) && (
+        {(statusFilter !== 'all' || hideEmpty || searchTerm) && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#E2E8F0] flex-wrap">
             <span className="text-xs font-semibold text-[#64748B]">Aktivní filtry:</span>
             {searchTerm && (
@@ -391,11 +359,6 @@ const Projects: React.FC = () => {
                 Status: {statusFilter === 'active' ? 'Ve výstavbě' : statusFilter === 'completed' ? 'Dokončeno' : 'Pozastaveno'}
               </span>
             )}
-            {yearFilter !== 'all' && (
-              <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
-                Rok: {yearFilter}
-              </span>
-            )}
             {hideEmpty && (
               <span className="px-2 py-1 bg-[#F0F9FF] text-[#5B9AAD] rounded-lg text-xs font-semibold">
                 Bez prázdných
@@ -405,7 +368,6 @@ const Projects: React.FC = () => {
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('all');
-                setYearFilter('all');
                 setHideEmpty(false);
               }}
               className="px-2 py-1 text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
