@@ -1,320 +1,263 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, Search, Download, Loader2, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, FileText, Download, Loader2, CheckCircle, Clock, AlertCircle, Filter } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Invoice } from '../types';
 import { formatCurrency, formatDate } from '../constants';
 
-// Typ pro statistiky z invoice_stats VIEW
-interface InvoiceStats {
-  total_count: number;
-  paid_count: number;
-  pending_count: number;
-  overdue_count: number;
-  total_amount: number;
-  paid_amount: number;
-  pending_amount: number;
-  overdue_amount: number;
-}
-
-const ITEMS_PER_PAGE = 50;
-
-const InvoiceStat: React.FC<{ label: string; value: string; count: number; color: string; icon: React.ElementType }> = ({ label, value, count, color, icon: Icon }) => (
-  <div className="bg-[#FAFBFC] rounded-2xl p-6 border border-[#E2E5E9]">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-2.5 rounded-xl ${color}`}>
-        <Icon size={20} aria-hidden="true" />
-      </div>
-      <span className="text-sm text-[#475569] font-medium leading-normal">{count} ks</span>
-    </div>
-    <p className="text-base text-[#475569] leading-relaxed mb-1">{label}</p>
-    <p className="text-2xl font-semibold text-[#0F172A] tracking-tight truncate" title={value}>{value}</p>
-  </div>
-);
-
-const Invoices: React.FC = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [stats, setStats] = useState<InvoiceStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAllInvoices, setShowAllInvoices] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
-
-  // Načti statistiky z optimalizovaného VIEW
-  const fetchStats = async (all: boolean) => {
-    const viewName = all ? 'invoice_stats_all' : 'invoice_stats';
-    const { data } = await supabase.from(viewName).select('*').single();
-    if (data) {
-      setStats(data);
-    }
-  };
-
-  // Načti faktury s LIMIT a OFFSET (pagination)
-  const fetchInvoices = async (all: boolean, reset: boolean = true) => {
-    try {
-      if (reset) {
-        setLoading(true);
-        setOffset(0);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const currentOffset = reset ? 0 : offset;
-
-      let query = supabase
-        .from('project_invoices')
-        .select('*')
-        .order('date_issue', { ascending: false })
-        .range(currentOffset, currentOffset + ITEMS_PER_PAGE - 1);
-
-      if (!all) {
-        query = query.not('project_id', 'is', null);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      const newInvoices = data || [];
-      
-      if (reset) {
-        setInvoices(newInvoices);
-      } else {
-        setInvoices(prev => [...prev, ...newInvoices]);
-      }
-
-      setHasMore(newInvoices.length === ITEMS_PER_PAGE);
-      setOffset(currentOffset + newInvoices.length);
-
-    } catch (err: unknown) {
-      console.error('Error fetching invoices:', err);
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  // Načti další stránku
-  const loadMore = () => {
-    if (!loadingMore && hasMore) {
-      fetchInvoices(showAllInvoices, false);
-    }
-  };
-
-  useEffect(() => {
-    // Paralelní načítání statistik a faktur
-    Promise.all([
-      fetchStats(showAllInvoices),
-      fetchInvoices(showAllInvoices, true)
-    ]);
-  }, [showAllInvoices]);
-
-  const filteredInvoices = useMemo(() => {
-    if (!searchTerm) return invoices;
-    
-    const term = searchTerm.toLowerCase();
-    return invoices.filter(i => 
-      i.invoice_number.toLowerCase().includes(term) ||
-      (i.project_name || '').toLowerCase().includes(term) ||
-      i.supplier_name.toLowerCase().includes(term)
-    );
-  }, [invoices, searchTerm]);
-
-  const getStatusBadge = (status: Invoice['payment_status']) => {
-    const styles = {
-      paid: 'bg-[#ECFDF5] text-[#059669]',
-      pending: 'bg-[#FEF9EE] text-[#D97706]',
-      overdue: 'bg-[#FEF2F2] text-[#DC2626]',
-    };
-    const labels = {
-      paid: 'Zaplaceno',
-      pending: 'Čekající',
-      overdue: 'Po splatnosti'
-    };
-    return (
-      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${styles[status]}`}>
-        {labels[status]}
-      </span>
-    );
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Číslo faktury', 'Projekt', 'Dodavatel', 'Částka', 'Splatnost', 'Stav'];
-    const rows = filteredInvoices.map(inv => [
-      inv.invoice_number,
-      inv.project_name || 'Režie',
-      inv.supplier_name,
-      inv.total_amount,
-      formatDate(inv.date_issue),
-      inv.payment_status === 'paid' ? 'Zaplaceno' : inv.payment_status === 'pending' ? 'Čekající' : 'Po splatnosti'
-    ]);
-    const csvContent = [headers, ...rows].map(row => row.join(';')).join('\n');
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `faktury-export-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+/**
+ * UNIFIED StatCard pro Invoices
+ * Label: 1.125rem (18px), font-semibold (600)
+ * Value: 1rem (16px), font-medium (500)
+ */
+const InvoiceStatCard: React.FC<{
+  label: string;
+  value: string;
+  count: string;
+  icon: React.ElementType;
+  variant?: 'default' | 'success' | 'warning' | 'danger';
+}> = ({ label, value, count, icon: Icon, variant = 'default' }) => {
+  const iconStyles = {
+    default: 'bg-[#F1F5F9] text-[#64748B]',
+    success: 'bg-[#D1FAE5] text-[#059669]',
+    warning: 'bg-[#FEF3C7] text-[#D97706]',
+    danger: 'bg-[#FEE2E2] text-[#DC2626]',
   };
 
   return (
-    <div className="space-y-8 animate-in pb-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <h1 className="text-2xl font-semibold text-[#0F172A] leading-tight">Přehled faktur</h1>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Invoice type toggle - segmented control */}
-          <div className="inline-flex p-1 bg-[#F4F6F8] rounded-xl border border-[#E2E5E9]">
-            <button
-              onClick={() => setShowAllInvoices(false)}
-              className={`px-4 py-2.5 min-h-[40px] rounded-lg text-base font-semibold transition-all ${
-                !showAllInvoices 
-                  ? 'bg-[#5B9AAD] text-[#F8FAFC]' 
-                  : 'bg-transparent text-[#475569] hover:text-[#0F172A] hover:bg-[#FAFBFC]'
-              }`}
-            >
-              Projektové faktury
-            </button>
-            <button
-              onClick={() => setShowAllInvoices(true)}
-              className={`px-4 py-2.5 min-h-[40px] rounded-lg text-base font-semibold transition-all ${
-                showAllInvoices 
-                  ? 'bg-[#5B9AAD] text-[#F8FAFC]' 
-                  : 'bg-transparent text-[#475569] hover:text-[#0F172A] hover:bg-[#FAFBFC]'
-              }`}
-            >
-              Všechny faktury
-            </button>
-          </div>
+    <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0]">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${iconStyles[variant]}`}>
+          <Icon size={18} aria-hidden="true" />
+        </div>
+        <span className="text-[11px] font-medium text-[#94A3B8]">{count}</span>
+      </div>
+      <div>
+        {/* Label - NADPIS: 1.1-1.2rem, font-semibold */}
+        <h4 className="text-[1.1rem] sm:text-[1.2rem] font-semibold text-[#1E293B] leading-tight mb-1">{label}</h4>
+        {/* Value - DATA: 1rem, font-medium */}
+        <p className="text-base font-medium text-[#475569] tabular-nums">{value}</p>
+      </div>
+    </div>
+  );
+};
 
+const Invoices: React.FC = () => {
+  const navigate = useNavigate();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState<'all' | 'project' | 'all_invoices'>('project');
+
+  useEffect(() => {
+    async function fetchInvoices() {
+      try {
+        setLoading(true);
+        let query = supabase
+          .from('project_invoices')
+          .select('*')
+          .order('date_issue', { ascending: false });
+
+        if (filter === 'project') {
+          query = query.not('project_id', 'is', null);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        setInvoices(data || []);
+      } catch (err) {
+        console.error('Error fetching invoices:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInvoices();
+  }, [filter]);
+
+  const filteredInvoices = useMemo(() => {
+    if (!searchTerm) return invoices;
+    const term = searchTerm.toLowerCase();
+    return invoices.filter(inv => 
+      inv.invoice_number?.toLowerCase().includes(term) ||
+      inv.project_name?.toLowerCase().includes(term) ||
+      inv.supplier_name?.toLowerCase().includes(term)
+    );
+  }, [invoices, searchTerm]);
+
+  const stats = useMemo(() => {
+    const total = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+    const paid = invoices.filter(inv => inv.payment_status === 'paid');
+    const pending = invoices.filter(inv => inv.payment_status === 'pending');
+    const overdue = invoices.filter(inv => inv.payment_status === 'overdue');
+    
+    return {
+      total: { amount: total, count: invoices.length },
+      paid: { amount: paid.reduce((s, i) => s + (i.total_amount || 0), 0), count: paid.length },
+      pending: { amount: pending.reduce((s, i) => s + (i.total_amount || 0), 0), count: pending.length },
+      overdue: { amount: overdue.reduce((s, i) => s + (i.total_amount || 0), 0), count: overdue.length },
+    };
+  }, [invoices]);
+
+  const getStatusBadge = (status: Invoice['payment_status']) => {
+    const config = {
+      paid: { bg: 'bg-[#ECFDF5]', text: 'text-[#059669]', label: 'Zaplaceno' },
+      pending: { bg: 'bg-[#FEF9EE]', text: 'text-[#D97706]', label: 'Čekající' },
+      overdue: { bg: 'bg-[#FEF2F2]', text: 'text-[#DC2626]', label: 'Po splatnosti' },
+    };
+    const { bg, text, label } = config[status];
+    return <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${bg} ${text}`}>{label}</span>;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#5B9AAD] mb-4" />
+        <p className="text-base font-medium text-[#64748B]">Načítání faktur...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Přehled faktur</h1>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
           <button 
-            onClick={exportToCSV}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FAFBFC] border border-[#E2E5E9] text-[#0F172A] rounded-xl font-medium text-base hover:bg-[#FDFDFE] hover:border-[#CDD1D6] focus:ring-2 focus:ring-[#5B9AAD]/50 transition-colors w-full sm:w-auto leading-relaxed min-h-[44px]"
+            onClick={() => setFilter(filter === 'project' ? 'all_invoices' : 'project')}
+            className={`flex-1 sm:flex-none h-11 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              filter === 'project' 
+                ? 'bg-[#5B9AAD] text-white' 
+                : 'bg-white border border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC]'
+            }`}
           >
-            <Download size={18} aria-hidden="true" />
-            <span>Export CSV</span>
+            Projektové faktury
+          </button>
+          <button 
+            onClick={() => setFilter(filter === 'all_invoices' ? 'project' : 'all_invoices')}
+            className={`flex-1 sm:flex-none h-11 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              filter === 'all_invoices' 
+                ? 'bg-[#5B9AAD] text-white' 
+                : 'bg-white border border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC]'
+            }`}
+          >
+            Všechny faktury
+          </button>
+          <button className="h-11 px-4 bg-white border border-[#E2E8F0] rounded-xl text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition-all flex items-center gap-2">
+            <Download size={16} />
+            <span className="hidden sm:inline">Export CSV</span>
           </button>
         </div>
       </div>
 
-      <div className="relative w-full">
-        <label htmlFor="search-invoices" className="sr-only">Hledat v fakturách</label>
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#475569]" size={20} aria-hidden="true" />
+      {/* Stats - UNIFIED */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <InvoiceStatCard 
+          label="Fakturováno" 
+          value={formatCurrency(stats.total.amount)} 
+          count={`${stats.total.count} ks`}
+          icon={FileText} 
+        />
+        <InvoiceStatCard 
+          label="Uhrazeno" 
+          value={formatCurrency(stats.paid.amount)} 
+          count={`${stats.paid.count} ks`}
+          icon={CheckCircle} 
+          variant="success"
+        />
+        <InvoiceStatCard 
+          label="Čekající" 
+          value={formatCurrency(stats.pending.amount)} 
+          count={`${stats.pending.count} ks`}
+          icon={Clock} 
+          variant="warning"
+        />
+        <InvoiceStatCard 
+          label="Po splatnosti" 
+          value={formatCurrency(stats.overdue.amount)} 
+          count={`${stats.overdue.count} ks`}
+          icon={AlertCircle} 
+          variant="danger"
+        />
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
         <input
-          id="search-invoices"
           type="text"
           placeholder="Hledat..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 bg-[#FAFBFC] border border-[#E2E5E9] rounded-2xl outline-none text-base text-[#0F172A] placeholder-[#5C6878] focus:border-[#5B9AAD] transition-all font-medium leading-relaxed min-h-[44px]"
+          className="w-full h-11 pl-11 pr-4 bg-white border border-[#E2E8F0] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#5B9AAD] focus:ring-2 focus:ring-[#5B9AAD]/20 transition-all"
         />
       </div>
 
-      {/* Statistiky z VIEW - ne z JS výpočtu */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <InvoiceStat 
-          label="Fakturováno" 
-          value={formatCurrency(stats?.total_amount || 0)} 
-          count={stats?.total_count || 0} 
-          color="bg-[#F8F9FA] text-[#475569]" 
-          icon={FileText} 
-        />
-        <InvoiceStat 
-          label="Uhrazeno" 
-          value={formatCurrency(stats?.paid_amount || 0)} 
-          count={stats?.paid_count || 0} 
-          color="bg-[#ECFDF5] text-[#059669]" 
-          icon={CheckCircle2} 
-        />
-        <InvoiceStat 
-          label="Čekající" 
-          value={formatCurrency(stats?.pending_amount || 0)} 
-          count={stats?.pending_count || 0} 
-          color="bg-[#FEF9EE] text-[#D97706]" 
-          icon={Clock} 
-        />
-        <InvoiceStat 
-          label="Po splatnosti" 
-          value={formatCurrency(stats?.overdue_amount || 0)} 
-          count={stats?.overdue_count || 0} 
-          color="bg-[#FEF2F2] text-[#DC2626]" 
-          icon={AlertCircle} 
-        />
-      </div>
-
-      <div className="bg-[#FAFBFC] rounded-2xl border border-[#E2E5E9] overflow-hidden">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-[#475569]">
-            <Loader2 className="w-12 h-12 animate-spin text-[#5B9AAD] mb-4" />
-            <p className="font-medium text-lg leading-normal">Aktualizace dat...</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[800px]" role="table">
-                <thead>
-                  <tr className="bg-[#F4F6F8] border-b border-[#E2E5E9]">
-                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-[#475569]">Faktura</th>
-                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-[#475569]">Přiřazení / Dodavatel</th>
-                    <th scope="col" className="px-6 py-4 text-right text-sm font-semibold text-[#475569]">Částka</th>
-                    <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-[#475569]">Vystaveno</th>
-                    <th scope="col" className="px-6 py-4 text-center text-sm font-semibold text-[#475569]">Stav</th>
-                    <th scope="col" className="px-6 py-4"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E2E5E9]">
-                  {filteredInvoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-[#F8F9FA] transition-colors group">
-                      <td className="px-6 py-4 text-base text-[#0F172A] font-semibold leading-relaxed">{inv.invoice_number}</td>
-                      <td className="px-6 py-4">
-                        {inv.project_id ? (
-                          <div className="text-base text-[#0F172A] font-semibold truncate max-w-[200px] mb-0.5 leading-relaxed">{inv.project_name}</div>
-                        ) : (
-                          <span className="inline-block px-2 py-0.5 bg-[#F8F9FA] text-[#475569] text-xs font-semibold rounded tracking-normal border border-[#E2E5E9] mb-1 leading-normal">Režie</span>
-                        )}
-                        <div className="text-base text-[#475569] truncate max-w-[200px] leading-relaxed">{inv.supplier_name}</div>
-                      </td>
-                      <td className="px-6 py-4 text-base text-[#0F172A] text-right font-semibold leading-relaxed">{formatCurrency(inv.total_amount)}</td>
-                      <td className="px-6 py-4 text-base text-[#0F172A] leading-relaxed">{formatDate(inv.date_issue)}</td>
-                      <td className="px-6 py-4 text-center">
-                        {getStatusBadge(inv.payment_status)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-3 min-h-[44px] min-w-[44px] text-[#475569] rounded-xl font-medium hover:bg-[#E2E5E9]/50 hover:text-[#0F172A] transition-colors" aria-label="Stáhnout fakturu">
-                          <Download size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Load more button */}
-            {hasMore && !searchTerm && (
-              <div className="p-6 border-t border-[#E2E5E9] flex justify-center">
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="flex items-center gap-2 px-8 py-3 bg-[#F4F6F8] hover:bg-[#E2E5E9] text-[#0F172A] rounded-xl font-semibold transition-colors disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <ChevronDown size={20} />
-                  )}
-                  <span>Načíst další faktury</span>
-                </button>
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-[#F1F5F9]">
+          {filteredInvoices.slice(0, 20).map((inv) => (
+            <div key={inv.id} className="p-4 hover:bg-[#FAFBFC] transition-colors">
+              <div className="flex justify-between items-start gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-[#0F172A] truncate">{inv.invoice_number}</p>
+                  <p className="text-xs text-[#64748B] truncate">{inv.project_name || 'Bez projektu'}</p>
+                </div>
+                {getStatusBadge(inv.payment_status)}
               </div>
-            )}
-
-            {/* Info o počtu zobrazených */}
-            <div className="px-6 py-4 bg-[#F4F6F8] border-t border-[#E2E5E9] text-center text-sm text-[#475569]">
-              Zobrazeno {filteredInvoices.length} z {stats?.total_count || 0} faktur
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-[#94A3B8] truncate flex-1">{inv.supplier_name}</p>
+                <p className="text-sm font-bold text-[#0F172A] ml-2 tabular-nums">{formatCurrency(inv.total_amount)}</p>
+              </div>
             </div>
-          </>
-        )}
+          ))}
+        </div>
+
+        {/* Desktop */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-[#FAFBFC]">
+                <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Faktura</th>
+                <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Přiřazení / Dodavatel</th>
+                <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Částka</th>
+                <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Vystaveno</th>
+                <th className="px-5 py-3 text-xs font-semibold text-[#64748B]">Stav</th>
+                <th className="px-5 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#F1F5F9]">
+              {filteredInvoices.slice(0, 50).map((inv) => (
+                <tr key={inv.id} className="hover:bg-[#FAFBFC] transition-colors">
+                  <td className="px-5 py-4">
+                    <p className="text-sm font-medium text-[#0F172A]">{inv.invoice_number}</p>
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="text-sm text-[#0F172A]">{inv.project_name || 'Bez projektu'}</p>
+                    <p className="text-xs text-[#64748B]">{inv.supplier_name}</p>
+                  </td>
+                  <td className="px-5 py-4 text-sm font-semibold text-[#0F172A] tabular-nums">
+                    {formatCurrency(inv.total_amount)}
+                  </td>
+                  <td className="px-5 py-4 text-sm text-[#64748B]">
+                    {formatDate(inv.date_issue)}
+                  </td>
+                  <td className="px-5 py-4">
+                    {getStatusBadge(inv.payment_status)}
+                  </td>
+                  <td className="px-5 py-4">
+                    <button className="p-2 text-[#64748B] hover:text-[#5B9AAD] hover:bg-[#F0F9FF] rounded-lg transition-all">
+                      <Download size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
